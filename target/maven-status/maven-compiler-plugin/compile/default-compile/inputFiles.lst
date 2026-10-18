@@ -1,5 +1,6 @@
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone2Test.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone3Test.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone4Test.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/config/DatabaseConfig.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/dao/BookDAO.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/dao/BorrowRecordDAO.java
@@ -12,6 +13,10 @@
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/dao/impl/CategoryDAOImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/dao/impl/FineDAOImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/dao/impl/UserDAOImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/exception/BorrowException.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/exception/LibraryException.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/exception/ResourceNotFoundException.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/exception/ValidationException.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/Book.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/BorrowRecord.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/BorrowStatus.java
@@ -23,3 +28,13 @@
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/Staff.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/User.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/model/UserStatus.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/BookService.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/BorrowService.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/CategoryService.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/FineService.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/UserService.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/BookServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/BorrowServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/CategoryServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/FineServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/UserServiceImpl.java

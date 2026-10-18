@@ -1,0 +1,77 @@
+package com.library.service;
+
+import com.library.model.Member;
+import com.library.model.Staff;
+import com.library.model.User;
+
+import java.util.List;
+
+/**
+ * Giao diện dịch vụ nghiệp vụ quản lý Người dùng (Độc giả, Nhân viên, Quản trị viên).
+ */
+public interface UserService {
+
+    /**
+     * Xác thực thông tin đăng nhập cho nhân viên và quản trị viên.
+     *
+     * @param username    Tên tài khoản
+     * @param rawPassword Mật khẩu chưa mã hóa
+     * @return Đối tượng User tương ứng nếu đăng nhập thành công
+     * @throws com.library.exception.ValidationException nếu thông tin sai
+     * @throws com.library.exception.BorrowException     nếu tài khoản bị khóa
+     */
+    User authenticate(String username, String rawPassword);
+
+    /**
+     * Lấy người dùng theo mã định danh ID.
+     *
+     * @param userId Mã ID
+     * @return Đối tượng User
+     */
+    User getUserById(int userId);
+
+    /**
+     * Lấy người dùng theo mã thẻ bạn đọc hoặc mã nhân viên (userCode).
+     *
+     * @param userCode Mã người dùng (VD: MBR001, ADM001)
+     * @return Đối tượng User
+     */
+    User getUserByCode(String userCode);
+
+    /**
+     * Lấy người dùng theo tên tài khoản đăng nhập.
+     *
+     * @param username Tên đăng nhập
+     * @return Đối tượng User
+     */
+    User getUserByUsername(String username);
+
+    /**
+     * Chuyển đổi trạng thái tài khoản (ACTIVE <-> LOCKED).
+     *
+     * @param userId Mã người dùng
+     * @return true nếu chuyển đổi thành công
+     */
+    boolean toggleUserStatus(int userId);
+
+    /**
+     * Lấy danh sách toàn bộ độc giả (Member).
+     *
+     * @return Danh sách Member
+     */
+    List<Member> getAllMembers();
+
+    /**
+     * Lấy danh sách toàn bộ nhân viên thư viện và quản trị viên (Staff).
+     *
+     * @return Danh sách Staff
+     */
+    List<Staff> getAllStaffs();
+
+    /**
+     * Lấy toàn bộ người dùng trong hệ thống.
+     *
+     * @return Danh sách User
+     */
+    List<User> getAllUsers();
+}

@@ -50,12 +50,12 @@ INSERT INTO books (isbn, title, author, category_id, publish_year, total_copies,
 INSERT INTO users (user_code, username, password_hash, full_name, email, phone, role, status) VALUES
 -- ADMIN (1 người)
 ('ADM001', 'admin',
- '6ca13d52ca70c883e0f0bb101e425a89e8624de51db2d2392593af6a84118090',
+ SHA2('Admin@123', 256),
  'Nguyễn Quản Trị', 'admin@library.edu.vn', '0988000001', 'ADMIN', 'ACTIVE'),
 
 -- LIBRARIAN (1 người)
 ('LIB001', 'thuthu_mai',
- '7e2a37e90b2b9f3f25c67a7b4d0b3d5a6e8c3f1d9b2e4a6c8d0e2f4a6b8c0d2',
+ SHA2('Lib@2025', 256),
  'Trần Tuyết Mai', 'mai.tt@library.edu.vn', '0988000002', 'LIBRARIAN', 'ACTIVE'),
 
 -- MEMBER (4 người)
