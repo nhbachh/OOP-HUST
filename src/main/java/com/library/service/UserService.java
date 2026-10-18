@@ -1,6 +1,7 @@
 package com.library.service;
 
 import com.library.model.Member;
+import com.library.model.Role;
 import com.library.model.Staff;
 import com.library.model.User;
 
@@ -67,6 +68,18 @@ public interface UserService {
      * @return Danh sách Staff
      */
     List<Staff> getAllStaffs();
+
+    /**
+     * Thêm mới tài khoản nhân viên / quản trị viên.
+     */
+    Staff createStaff(String userCode, String username, String rawPassword,
+                      String fullName, String email, String phone,
+                      Role role, String department);
+
+    /**
+     * Thêm mới độc giả vào hệ thống.
+     */
+    Member createMember(String userCode, String fullName, String email, String phone);
 
     /**
      * Lấy toàn bộ người dùng trong hệ thống.

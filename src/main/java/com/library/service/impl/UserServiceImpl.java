@@ -6,6 +6,7 @@ import com.library.exception.BorrowException;
 import com.library.exception.ResourceNotFoundException;
 import com.library.exception.ValidationException;
 import com.library.model.Member;
+import com.library.model.Role;
 import com.library.model.Staff;
 import com.library.model.User;
 import com.library.model.UserStatus;
@@ -102,6 +103,67 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<User> getAllUsers() {
         return userDAO.findAll();
+    }
+
+    @Override
+    public Staff createStaff(String userCode, String username, String rawPassword,
+                             String fullName, String email, String phone,
+                             Role role, String department) {
+        if (userCode == null || userCode.trim().isEmpty()) {
+            throw new ValidationException("Mã nhân viên không được để trống.");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new ValidationException("Tên đăng nhập không được để trống.");
+        }
+        if (rawPassword == null || rawPassword.trim().isEmpty()) {
+            throw new ValidationException("Mật khẩu không được để trống.");
+        }
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new ValidationException("Họ và tên không được để trống.");
+        }
+        if (role != Role.ADMIN && role != Role.LIBRARIAN) {
+            throw new ValidationException("Vai trò nhân viên phải là ADMIN hoặc LIBRARIAN.");
+        }
+
+        if (userDAO.findByUserCode(userCode.trim()).isPresent()) {
+            throw new ValidationException("Mã người dùng '" + userCode.trim() + "' đã tồn tại.");
+        }
+        if (userDAO.findByUsername(username.trim()).isPresent()) {
+            throw new ValidationException("Tên đăng nhập '" + username.trim() + "' đã tồn tại.");
+        }
+
+        String passwordHash = hashPassword(rawPassword.trim());
+        Staff staff = new Staff(userCode.trim(), username.trim(), passwordHash,
+                fullName.trim(), email != null ? email.trim() : null,
+                phone != null ? phone.trim() : null, role, department != null ? department.trim() : null);
+
+        boolean success = userDAO.insert(staff);
+        if (!success) {
+            throw new RuntimeException("Lỗi hệ thống khi thêm nhân viên mới.");
+        }
+        return staff;
+    }
+
+    @Override
+    public Member createMember(String userCode, String fullName, String email, String phone) {
+        if (userCode == null || userCode.trim().isEmpty()) {
+            throw new ValidationException("Mã độc giả không được để trống.");
+        }
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new ValidationException("Họ và tên độc giả không được để trống.");
+        }
+        if (userDAO.findByUserCode(userCode.trim()).isPresent()) {
+            throw new ValidationException("Mã người dùng '" + userCode.trim() + "' đã tồn tại.");
+        }
+
+        Member member = new Member(userCode.trim(), fullName.trim(),
+                email != null ? email.trim() : null, phone != null ? phone.trim() : null);
+
+        boolean success = userDAO.insert(member);
+        if (!success) {
+            throw new RuntimeException("Lỗi hệ thống khi thêm độc giả mới.");
+        }
+        return member;
     }
 
     /**

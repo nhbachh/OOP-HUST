@@ -1,3 +1,4 @@
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Main.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone2Test.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone3Test.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/Milestone4Test.java
@@ -38,3 +39,9 @@
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/CategoryServiceImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/FineServiceImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/UserServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/AdminView.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/AuthView.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/ConsoleUtils.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/LibrarianView.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/MemberView.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/TableFormatter.java
