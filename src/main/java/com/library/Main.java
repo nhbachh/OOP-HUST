@@ -1,14 +1,18 @@
 package com.library;
 
+import com.formdev.flatlaf.FlatLightLaf;
 import com.library.model.*;
 import com.library.service.*;
 import com.library.service.impl.*;
 import com.library.view.*;
 
+import javax.swing.*;
 import java.util.List;
 
 /**
  * Điểm khởi chạy chính của ứng dụng Quản lý Thư viện (Library Management System).
+ * Tích hợp giao diện đồ họa hiện đại FlatLaf (Swing GUI) theo mặc định,
+ * đồng thời hỗ trợ chuyển sang giao diện dòng lệnh khi truyền tham số '--cli'.
  * Áp dụng kiến trúc phân tầng: Model -> DAO -> Service -> View.
  */
 public class Main {
@@ -30,11 +34,46 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Main app = new Main();
-        app.run();
+        // Kiểm tra xem người dùng có yêu cầu chạy chế độ dòng lệnh Console CLI hay không
+        if (args.length > 0 && ("--cli".equalsIgnoreCase(args[0]) || "-c".equalsIgnoreCase(args[0]))) {
+            Main app = new Main();
+            app.runCli();
+            return;
+        }
+
+        // Mặc định khởi chạy Giao diện Đồ họa Hiện đại (Swing GUI với FlatLaf)
+        launchGui();
     }
 
-    public void run() {
+    /**
+     * Cấu hình và khởi chạy Giao diện đồ họa người dùng (Swing GUI).
+     */
+    public static void launchGui() {
+        try {
+            // Cài đặt Look and Feel FlatLaf hiện đại
+            FlatLightLaf.setup();
+        } catch (Exception e) {
+            System.err.println("Không thể khởi tạo FlatLaf Look and Feel: " + e.getMessage());
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                LoginFrame loginFrame = new LoginFrame();
+                loginFrame.setVisible(true);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null,
+                        "Lỗi khi khởi chạy ứng dụng GUI: " + e.getMessage(),
+                        "Lỗi khởi động",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * Chạy ứng dụng ở chế độ Console CLI.
+     */
+    public void runCli() {
         boolean running = true;
         printWelcomeBanner();
 

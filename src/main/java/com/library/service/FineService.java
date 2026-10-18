@@ -74,4 +74,11 @@ public interface FineService {
      * @return Đối tượng Fine
      */
     Fine getFineByRecordId(int recordId);
+
+    /**
+     * Lấy toàn bộ danh sách phiếu phạt trong hệ thống.
+     *
+     * @return Danh sách Fine
+     */
+    List<Fine> getAllFines();
 }

@@ -81,4 +81,9 @@ public class FineServiceImpl implements FineService {
         return fineDAO.findByRecordId(recordId)
                 .orElseThrow(() -> new ResourceNotFoundException("Phiếu phạt gắn với phiếu mượn", recordId));
     }
+
+    @Override
+    public List<Fine> getAllFines() {
+        return fineDAO.findAll();
+    }
 }

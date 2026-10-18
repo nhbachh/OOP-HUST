@@ -39,9 +39,14 @@
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/CategoryServiceImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/FineServiceImpl.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/service/impl/UserServiceImpl.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/AdminDashboardFrame.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/AdminView.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/AuthView.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/ConsoleUtils.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/LibrarianDashboardFrame.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/LibrarianView.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/LoginFrame.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/MemberDashboardFrame.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/MemberView.java
 /Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/TableFormatter.java
+/Users/apple/Documents/LibraryManagementSystem/src/main/java/com/library/view/UIUtils.java

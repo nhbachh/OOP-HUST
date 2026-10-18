@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Main (Library Management)",
+            "request": "launch",
+            "mainClass": "com.library.Main",
+            "projectName": "LibraryManagementSystem",
+            "console": "integratedTerminal"
+        }
+    ]
+}
