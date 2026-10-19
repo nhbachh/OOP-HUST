@@ -79,4 +79,12 @@ public final class DatabaseConfig {
         }
         System.out.println("==================================================");
     }
+
+    /**
+     * Điểm chạy độc lập để kiểm tra kết nối CSDL trực tiếp từ IDE hoặc dòng lệnh.
+     */
+    public static void main(String[] args) {
+        testConnection();
+        com.mysql.cj.jdbc.AbandonedConnectionCleanupThread.checkedShutdown();
+    }
 }
