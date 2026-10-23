@@ -4,6 +4,7 @@ import com.library.model.*;
 import com.library.service.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.math.BigDecimal;
@@ -11,21 +12,23 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Cửa sổ làm việc cho Quản trị viên (Admin Dashboard).
- * Kế thừa LibrarianDashboardFrame (Inheritance - Kế thừa trong OOP) để tái sử dụng toàn bộ chức năng của Thủ thư,
- * đồng thời bổ sung thêm các đặc quyền quản trị: Quản lý Người dùng và Thống kê & Báo cáo tổng thể.
- * Tuân thủ Loose Coupling: Chỉ thao tác thông qua Service layer.
+ * Trung tâm Quản trị Hệ thống — Phong cách Bách Khoa Hiện Đại (HUST Lib Admin Dashboard).
+ * Kế thừa LibrarianDashboardFrame (Tính kế thừa OOP), tích hợp toàn bộ nghiệp vụ Thủ thư,
+ * đồng thời bổ sung thêm 2 Card đặc quyền: Quản trị Người Dùng & Thẻ và Báo Cáo Thống Kê Chi Tiết.
  */
 public class AdminDashboardFrame extends LibrarianDashboardFrame {
 
-    // Tab User Management components
+    public static final String CARD_USERS = "USERS";
+    public static final String CARD_STATS = "STATS";
+
+    // Components Card Quản lý Người dùng
     private DefaultTableModel userTableModel;
     private JTable userTable;
     private JComboBox<String> cboUserRoleFilter;
     private JComboBox<String> cboUserStatusFilter;
     private JTextField txtUserSearch;
 
-    // Tab Statistics components
+    // Components Card Thống kê Báo cáo
     private JPanel statsCardsContainer;
     private DefaultTableModel overdueTableModel;
     private JTable overdueTable;
@@ -43,31 +46,47 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
 
     @Override
     protected String getFrameTitle() {
-        return "Hệ thống Quản lý Thư viện — Bàn làm việc Quản trị viên (" + staff.getUserCode() + " - " + staff.getFullName() + ")";
+        return "HUST Lib — Trung tâm Quản trị Hệ thống (" + staff.getUserCode() + " - " + staff.getFullName() + ")";
     }
 
     @Override
-    protected void initLibrarianTabs(JTabbedPane tabbed) {
-        // Gọi lại 4 tab nghiệp vụ thủ thư
-        super.initLibrarianTabs(tabbed);
+    protected String getRoleBadgeText() {
+        return "QUẢN TRỊ VIÊN • " + staff.getUserCode();
+    }
 
-        // Bổ sung 2 tab đặc quyền quản trị
-        tabbed.addTab("Quản lý Người dùng (Users)", createUserManagementTab());
-        tabbed.addTab("Thống kê & Báo cáo Hệ thống", createStatisticsTab());
+    @Override
+    protected void populateSidebarMenuItems() {
+        // Thêm 5 mục cơ bản của thủ thư
+        super.populateSidebarMenuItems();
+
+        // Thêm 2 mục đặc quyền của Quản trị viên
+        addSidebarItem("👥  Quản lý Người Dùng", CARD_USERS, "Trang chủ / Quản lý Người Dùng & Thẻ");
+        addSidebarItem("📈  Báo Cáo Thống Kê", CARD_STATS, "Trang chủ / Báo Cáo Thống Kê Hệ Thống");
+    }
+
+    @Override
+    protected void initCards(JPanel cardPanel) {
+        super.initCards(cardPanel);
+
+        cardPanel.add(createUserManagementCard(), CARD_USERS);
+        cardPanel.add(createStatisticsCard(), CARD_STATS);
     }
 
     // =========================================================================
-    // TAB 5: QUẢN LÝ NGƯỜI DÙNG (USERS MANAGEMENT)
+    // CARD: QUẢN LÝ NGƯỜI DÙNG & TÀI KHOẢN
     // =========================================================================
-    private JPanel createUserManagementTab() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+    private JPanel createUserManagementCard() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        panel.setBackground(HustTheme.CONTENT_BG);
 
         // Toolbar
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
+        toolbar.setOpaque(false);
+
         toolbar.add(new JLabel("Tìm kiếm:"));
         txtUserSearch = new JTextField(12);
-        txtUserSearch.setToolTipText("Tìm theo Họ tên, Mã, Username, Email");
+        txtUserSearch.putClientProperty("JTextField.placeholderText", "Họ tên, mã, email...");
         txtUserSearch.addActionListener(e -> loadUsersTable());
         toolbar.add(txtUserSearch);
 
@@ -81,11 +100,11 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         cboUserStatusFilter.addActionListener(e -> loadUsersTable());
         toolbar.add(cboUserStatusFilter);
 
-        JButton btnSearch = new JButton("Lọc");
-        btnSearch.addActionListener(e -> loadUsersTable());
-        toolbar.add(btnSearch);
+        JButton btnFilter = UIUtils.createSecondaryButton("Lọc");
+        btnFilter.addActionListener(e -> loadUsersTable());
+        toolbar.add(btnFilter);
 
-        JButton btnRefresh = new JButton("Làm mới");
+        JButton btnRefresh = UIUtils.createSecondaryButton("Làm mới");
         btnRefresh.addActionListener(e -> {
             txtUserSearch.setText("");
             cboUserRoleFilter.setSelectedIndex(0);
@@ -94,38 +113,37 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         });
         toolbar.add(btnRefresh);
 
-        toolbar.add(new JSeparator(JSeparator.VERTICAL));
+        toolbar.add(Box.createHorizontalStrut(10));
 
-        JButton btnAddStaff = new JButton("+ Thêm Nhân viên");
+        JButton btnAddStaff = UIUtils.createPrimaryButton("+ Thêm Nhân Viên");
         btnAddStaff.addActionListener(e -> showAddStaffDialog());
         toolbar.add(btnAddStaff);
 
-        JButton btnAddMember = new JButton("+ Thêm Độc giả");
+        JButton btnAddMember = UIUtils.createSecondaryButton("+ Thêm Độc Giả");
         btnAddMember.addActionListener(e -> showAddMemberDialog());
         toolbar.add(btnAddMember);
 
-        JButton btnToggleStatus = new JButton("Khóa / Mở khóa");
-        btnToggleStatus.setFont(btnToggleStatus.getFont().deriveFont(Font.BOLD, 12f));
-        btnToggleStatus.addActionListener(e -> handleToggleUserStatus());
-        toolbar.add(btnToggleStatus);
+        JButton btnToggle = UIUtils.createSecondaryButton("Khóa / Mở Khóa");
+        btnToggle.addActionListener(e -> handleToggleUserStatus());
+        toolbar.add(btnToggle);
 
         panel.add(toolbar, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID", "Mã người dùng", "Tài khoản", "Họ và tên", "Email", "SĐT", "Vai trò", "Trạng thái", "Thông tin bổ sung"};
-        userTableModel = new DefaultTableModel(columns, 0);
+        String[] cols = {"ID", "Mã người dùng", "Tài khoản", "Họ và tên", "Email", "SĐT", "Vai trò", "Trạng thái", "Ghi chú"};
+        userTableModel = new DefaultTableModel(cols, 0);
         userTable = UIUtils.createReadonlyTable(userTableModel);
-        UIUtils.centerAlignColumns(userTable, 0, 1, 6, 7);
+        UIUtils.centerAlignColumns(userTable, 0, 1, 6);
+        UIUtils.setStatusPillRenderer(userTable, 7);
+
         UIUtils.setColumnWidth(userTable, 0, 50);
         UIUtils.setColumnWidth(userTable, 1, 100);
         UIUtils.setColumnWidth(userTable, 2, 110);
         UIUtils.setColumnWidth(userTable, 3, 170);
-        UIUtils.setColumnWidth(userTable, 4, 160);
-        UIUtils.setColumnWidth(userTable, 5, 110);
-        UIUtils.setColumnWidth(userTable, 6, 90);
-        UIUtils.setColumnWidth(userTable, 7, 90);
 
-        panel.add(new JScrollPane(userTable), BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(userTable);
+        scroll.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
+        panel.add(scroll, BorderLayout.CENTER);
 
         return panel;
     }
@@ -138,16 +156,13 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
             int statusFilterIdx = cboUserStatusFilter != null ? cboUserStatusFilter.getSelectedIndex() : 0;
 
             List<User> filtered = users.stream().filter(u -> {
-                // Role filter
                 if (roleFilterIdx == 1 && u.getRole() != Role.ADMIN) return false;
                 if (roleFilterIdx == 2 && u.getRole() != Role.LIBRARIAN) return false;
                 if (roleFilterIdx == 3 && u.getRole() != Role.MEMBER) return false;
 
-                // Status filter
                 if (statusFilterIdx == 1 && u.getStatus() != UserStatus.ACTIVE) return false;
                 if (statusFilterIdx == 2 && u.getStatus() != UserStatus.LOCKED) return false;
 
-                // Keyword search
                 if (!kw.isEmpty()) {
                     boolean matchName = u.getFullName() != null && u.getFullName().toLowerCase().contains(kw);
                     boolean matchCode = u.getUserCode() != null && u.getUserCode().toLowerCase().contains(kw);
@@ -160,11 +175,11 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
 
             userTableModel.setRowCount(0);
             for (User u : filtered) {
-                String extraInfo = "";
+                String extra = "";
                 if (u instanceof Staff s) {
-                    extraInfo = "Phòng ban: " + (s.getDepartment() != null ? s.getDepartment() : "N/A");
+                    extra = "Phòng ban: " + (s.getDepartment() != null ? s.getDepartment() : "N/A");
                 } else if (u instanceof Member m) {
-                    extraInfo = "Đang mượn: " + m.getCurrentBorrowCount() + "/" + m.getMaxBorrowLimit() + " cuốn";
+                    extra = "Đang mượn: " + m.getCurrentBorrowCount() + "/" + m.getMaxBorrowLimit() + " cuốn";
                 }
 
                 userTableModel.addRow(new Object[]{
@@ -176,7 +191,7 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
                         u.getPhone() != null ? u.getPhone() : "",
                         u.getRole(),
                         u.getStatus(),
-                        extraInfo
+                        extra
                 });
             }
         } catch (Exception e) {
@@ -185,13 +200,13 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
     }
 
     private void showAddStaffDialog() {
-        JDialog dialog = new JDialog(this, "Thêm Mới Nhân Viên / Quản Trị Viên", true);
+        JDialog dialog = new JDialog(this, "Thêm Mới Nhân Viên / Quản Trị Viên — HUST Lib", true);
         dialog.setSize(480, 480);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
         JPanel form = new JPanel(new GridLayout(8, 2, 10, 10));
-        form.setBorder(BorderFactory.createEmptyBorder(20, 25, 10, 25));
+        form.setBorder(new EmptyBorder(20, 25, 10, 25));
 
         JTextField txtCode = new JTextField();
         JTextField txtUsername = new JTextField();
@@ -204,7 +219,7 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
 
         form.add(new JLabel("Mã nhân viên (VD: LIB003) (*):"));
         form.add(txtCode);
-        form.add(new JLabel("Tên đăng nhập (Username) (*):"));
+        form.add(new JLabel("Tên đăng nhập (*):"));
         form.add(txtUsername);
         form.add(new JLabel("Mật khẩu (*):"));
         form.add(txtPass);
@@ -222,8 +237,8 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         dialog.add(form, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
-        JButton btnSave = new JButton("Lưu nhân viên");
-        JButton btnCancel = new JButton("Hủy bỏ");
+        JButton btnSave = UIUtils.createPrimaryButton("Lưu nhân viên");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy bỏ");
 
         btnSave.addActionListener(e -> {
             try {
@@ -247,7 +262,6 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
-
         btnPanel.add(btnCancel);
         btnPanel.add(btnSave);
         dialog.add(btnPanel, BorderLayout.SOUTH);
@@ -256,20 +270,20 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
     }
 
     private void showAddMemberDialog() {
-        JDialog dialog = new JDialog(this, "Thêm Mới Độc Giả Bạn Đọc", true);
+        JDialog dialog = new JDialog(this, "Thêm Mới Độc Giả Bạn Đọc — HUST Lib", true);
         dialog.setSize(440, 360);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
         JPanel form = new JPanel(new GridLayout(4, 2, 10, 12));
-        form.setBorder(BorderFactory.createEmptyBorder(25, 25, 10, 25));
+        form.setBorder(new EmptyBorder(25, 25, 10, 25));
 
         JTextField txtCode = new JTextField();
         JTextField txtName = new JTextField();
         JTextField txtEmail = new JTextField();
         JTextField txtPhone = new JTextField();
 
-        form.add(new JLabel("Mã độc giả (VD: MBR002) (*):"));
+        form.add(new JLabel("Mã độc giả / MSSV (*):"));
         form.add(txtCode);
         form.add(new JLabel("Họ và tên (*):"));
         form.add(txtName);
@@ -281,8 +295,8 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         dialog.add(form, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
-        JButton btnSave = new JButton("Lưu độc giả");
-        JButton btnCancel = new JButton("Hủy bỏ");
+        JButton btnSave = UIUtils.createPrimaryButton("Lưu độc giả");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy bỏ");
 
         btnSave.addActionListener(e -> {
             try {
@@ -302,7 +316,6 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         });
 
         btnCancel.addActionListener(e -> dialog.dispose());
-
         btnPanel.add(btnCancel);
         btnPanel.add(btnSave);
         dialog.add(btnPanel, BorderLayout.SOUTH);
@@ -322,7 +335,6 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
         String name = (String) userTableModel.getValueAt(row, 3);
         UserStatus status = (UserStatus) userTableModel.getValueAt(row, 7);
 
-        // Không cho phép tự khóa tài khoản Admin đang đăng nhập
         if (userId == staff.getUserId()) {
             UIUtils.showWarning(this, "Bạn không thể khóa tài khoản của chính mình!");
             return;
@@ -335,53 +347,62 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
                 UIUtils.showSuccess(this, "Đã cập nhật trạng thái tài khoản thành công!");
                 loadUsersTable();
             } catch (Exception ex) {
-                UIUtils.showError(this, "Lỗi cập nhật trạng thái: " + ex.getMessage());
+                UIUtils.showError(this, "Lỗi: " + ex.getMessage());
             }
         }
     }
 
     // =========================================================================
-    // TAB 6: THỐNG KÊ & BÁO CÁO HỆ THỐNG (SYSTEM STATISTICS)
+    // CARD: BÁO CÁO THỐNG KÊ CHI TIẾT
     // =========================================================================
-    private JPanel createStatisticsTab() {
+    private JPanel createStatisticsCard() {
         JPanel panel = new JPanel(new BorderLayout(15, 15));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        panel.setBackground(HustTheme.CONTENT_BG);
 
-        // Header and Refresh Button
+        // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        JLabel title = new JLabel("BÁO CÁO VÀ THỐNG KÊ CHỈ SỐ HOẠT ĐỘNG THƯ VIỆN");
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 15f));
-        title.setForeground(new Color(24, 90, 157));
+        headerPanel.setOpaque(false);
 
-        JButton btnRefreshStats = new JButton("Làm mới số liệu");
+        JLabel title = new JLabel("BÁO CÁO THỐNG KÊ TOÀN DIỆN THƯ VIỆN HUST");
+        title.setFont(HustTheme.FONT_HEADER);
+        title.setForeground(HustTheme.PRIMARY_RED);
+
+        JButton btnRefreshStats = UIUtils.createSecondaryButton("Làm mới số liệu");
         btnRefreshStats.addActionListener(e -> loadStatisticsData());
 
         headerPanel.add(title, BorderLayout.WEST);
         headerPanel.add(btnRefreshStats, BorderLayout.EAST);
-
         panel.add(headerPanel, BorderLayout.NORTH);
 
         // Center Content: Metric Cards + Overdue Table
         JPanel center = new JPanel(new BorderLayout(15, 15));
+        center.setOpaque(false);
 
-        statsCardsContainer = new JPanel(new GridLayout(2, 3, 12, 12));
+        statsCardsContainer = new JPanel(new GridLayout(2, 3, 14, 14));
+        statsCardsContainer.setOpaque(false);
         center.add(statsCardsContainer, BorderLayout.NORTH);
 
-        // Overdue Borrows Table Panel
-        JPanel overduePanel = new JPanel(new BorderLayout(5, 5));
-        JLabel lblOverdue = new JLabel("Danh sách các sách đang bị mượn quá hạn (Cần thu hồi & xử phạt):");
-        lblOverdue.setFont(lblOverdue.getFont().deriveFont(Font.BOLD, 13f));
+        // Overdue Table
+        JPanel overduePanel = new JPanel(new BorderLayout(6, 6));
+        overduePanel.setOpaque(false);
+
+        JLabel lblOverdue = new JLabel("Danh sách các sách đang bị mượn quá hạn (Cần liên hệ thu hồi & phạt):");
+        lblOverdue.setFont(HustTheme.FONT_BODY_BOLD);
+        lblOverdue.setForeground(HustTheme.PRIMARY_RED);
         overduePanel.add(lblOverdue, BorderLayout.NORTH);
 
-        String[] overdueCols = {"Mã phiếu", "Mã độc giả", "Họ tên độc giả", "Mã sách", "Tên sách", "Hạn trả", "Số ngày trễ", "Tiền phạt dự tính"};
+        String[] overdueCols = {"Mã phiếu", "Mã độc giả", "Họ tên bạn đọc", "Mã sách", "Tên sách", "Hạn trả", "Số ngày trễ", "Tiền phạt dự kiến"};
         overdueTableModel = new DefaultTableModel(overdueCols, 0);
         overdueTable = UIUtils.createReadonlyTable(overdueTableModel);
         UIUtils.centerAlignColumns(overdueTable, 0, 1, 3, 5, 6);
         UIUtils.rightAlignColumns(overdueTable, 7);
 
-        overduePanel.add(new JScrollPane(overdueTable), BorderLayout.CENTER);
-        center.add(overduePanel, BorderLayout.CENTER);
+        JScrollPane scroll = new JScrollPane(overdueTable);
+        scroll.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
+        overduePanel.add(scroll, BorderLayout.CENTER);
 
+        center.add(overduePanel, BorderLayout.CENTER);
         panel.add(center, BorderLayout.CENTER);
 
         return panel;
@@ -410,14 +431,13 @@ public class AdminDashboardFrame extends LibrarianDashboardFrame {
                     .map(Fine::getFineAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            // Re-render Stat Cards
             statsCardsContainer.removeAll();
-            statsCardsContainer.add(UIUtils.createStatCard("Tổng số đầu sách", String.valueOf(totalTitles) + " đầu sách", new Color(24, 90, 157)));
-            statsCardsContainer.add(UIUtils.createStatCard("Tổng số bản sách lưu hành", String.valueOf(totalCopies) + " cuốn", new Color(40, 167, 69)));
-            statsCardsContainer.add(UIUtils.createStatCard("Số sách đang được mượn", String.valueOf(borrowedCopies) + " cuốn", new Color(255, 140, 0)));
-            statsCardsContainer.add(UIUtils.createStatCard("Tổng số độc giả (Members)", String.valueOf(totalMembers) + " bạn đọc", new Color(111, 66, 193)));
-            statsCardsContainer.add(UIUtils.createStatCard("Phiếu mượn đang hiệu lực", String.valueOf(activeBorrows) + " phiếu", new Color(23, 162, 184)));
-            statsCardsContainer.add(UIUtils.createStatCard("Tổng tiền phạt chưa thu", UIUtils.formatCurrency(totalUnpaidAmount), new Color(220, 53, 69)));
+            statsCardsContainer.add(UIUtils.createStatCard("Tổng số đầu sách", totalTitles + " đầu sách", HustTheme.PRIMARY_RED, "📕"));
+            statsCardsContainer.add(UIUtils.createStatCard("Tổng số bản in lưu hành", totalCopies + " cuốn", HustTheme.ACCENT_GOLD, "📚"));
+            statsCardsContainer.add(UIUtils.createStatCard("Số sách đang mượn", borrowedCopies + " cuốn", new Color(217, 119, 6), "📖"));
+            statsCardsContainer.add(UIUtils.createStatCard("Tổng số độc giả HUST", totalMembers + " bạn đọc", new Color(111, 66, 193), "👥"));
+            statsCardsContainer.add(UIUtils.createStatCard("Phiếu mượn đang hiệu lực", activeBorrows + " phiếu", new Color(2, 132, 199), "📝"));
+            statsCardsContainer.add(UIUtils.createStatCard("Tổng tiền phạt chưa thu", UIUtils.formatCurrency(totalUnpaidAmount), new Color(220, 38, 38), "💰"));
 
             statsCardsContainer.revalidate();
             statsCardsContainer.repaint();

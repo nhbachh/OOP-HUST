@@ -50,8 +50,8 @@ public class Main {
      */
     public static void launchGui() {
         try {
-            // Cài đặt Look and Feel FlatLaf hiện đại
-            FlatLightLaf.setup();
+            // Cài đặt Look and Feel FlatLaf theo phong cách HUST Red hiện đại
+            HustTheme.setupFlatLaf();
         } catch (Exception e) {
             System.err.println("Không thể khởi tạo FlatLaf Look and Feel: " + e.getMessage());
         }

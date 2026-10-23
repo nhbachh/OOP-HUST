@@ -8,19 +8,24 @@ import com.library.model.*;
 import com.library.service.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Cửa sổ làm việc cho Thủ thư (Librarian Dashboard).
- * Cung cấp đầy đủ các nghiệp vụ thư viện: Quản lý sách & thể loại, mượn sách ACID, trả sách quá hạn, thu tiền phạt.
- * Thiết kế theo nguyên tắc Loose Coupling: Tương tác 100% qua tầng Service.
- * Hỗ trợ kế thừa (Inheritance) cho AdminDashboardFrame.
+ * Bàn làm việc Thủ thư — Phong cách Bách Khoa Hiện Đại (HUST Lib Modern Dashboard).
+ * Bố cục: Thanh Sidebar bên trái (Dark Burgundy), Thanh Header trên cùng với Breadcrumb & Tìm kiếm,
+ * Vùng nội dung trung tâm chuyển đổi mượt mà qua CardLayout.
+ * Tuân thủ Loose Coupling: 100% tương tác qua Service Layer.
  */
 public class LibrarianDashboardFrame extends JFrame {
 
@@ -31,35 +36,51 @@ public class LibrarianDashboardFrame extends JFrame {
     protected final FineService fineService;
     protected final UserService userService;
 
-    protected JTabbedPane tabbedPane;
+    // CardLayout cho vùng nội dung chính
+    protected CardLayout cardLayout;
+    protected JPanel contentCardPanel;
+
+    // Danh sách các nút menu trên Sidebar để quản lý trạng thái active
+    protected final List<JButton> sidebarButtons = new ArrayList<>();
+    protected JPanel sidebarMenuContainer;
+
+    protected JLabel lblBreadcrumb;
     protected final Map<Integer, String> categoryMap = new HashMap<>();
 
-    // Books tab components
+    // Các hằng số định danh Card
+    public static final String CARD_OVERVIEW = "OVERVIEW";
+    public static final String CARD_BOOKS = "BOOKS";
+    public static final String CARD_BORROW = "BORROW";
+    public static final String CARD_RETURN = "RETURN";
+    public static final String CARD_FINES = "FINES";
+
+    // Components Tab Sách
     protected DefaultTableModel bookTableModel;
     protected JTable bookTable;
     protected JTextField txtBookSearch;
     protected JComboBox<CategoryItem> cboBookCategoryFilter;
 
-    // Borrow tab components
+    // Components Tab Mượn Sách
     protected JTextField txtBorrowMemberCode;
     protected JLabel lblBorrowMemberInfo;
     protected Member currentBorrowMember;
-
     protected JTextField txtBorrowBookId;
     protected JLabel lblBorrowBookInfo;
     protected Book currentBorrowBook;
-
     protected JSpinner spnBorrowDays;
 
-    // Return tab components
+    // Components Tab Trả Sách
     protected DefaultTableModel returnTableModel;
     protected JTable returnTable;
     protected JTextField txtReturnSearch;
 
-    // Fine tab components
+    // Components Tab Tiền Phạt
     protected DefaultTableModel fineTableModel;
     protected JTable fineTable;
     protected JComboBox<String> cboFineStatusFilter;
+
+    // Overview KPI container
+    protected JPanel overviewCardsPanel;
 
     public LibrarianDashboardFrame(Staff staff,
                                    BookService bookService,
@@ -92,80 +113,287 @@ public class LibrarianDashboardFrame extends JFrame {
 
     protected void initComponents() {
         setTitle(getFrameTitle());
-        setSize(1080, 720);
-        setMinimumSize(new Dimension(950, 600));
+        setSize(1140, 750);
+        setMinimumSize(new Dimension(980, 620));
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Header Panel
-        add(createHeaderPanel(), BorderLayout.NORTH);
+        // 1. THANH SIDEBAR BÊN TRÁI (DARK BURGUNDY)
+        JPanel sidebar = createSidebarPanel();
+        add(sidebar, BorderLayout.WEST);
 
-        // Tabbed Pane
-        tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(tabbedPane.getFont().deriveFont(Font.BOLD, 13f));
+        // 2. KHU VỰC CHÍNH (TOP BAR + CONTENT CARDS)
+        JPanel mainArea = new JPanel(new BorderLayout());
+        mainArea.setBackground(HustTheme.CONTENT_BG);
 
-        initLibrarianTabs(tabbedPane);
+        // Top bar
+        JPanel topBar = createTopBar();
+        mainArea.add(topBar, BorderLayout.NORTH);
 
-        add(tabbedPane, BorderLayout.CENTER);
+        // Content Area with CardLayout
+        cardLayout = new CardLayout();
+        contentCardPanel = new JPanel(cardLayout);
+        contentCardPanel.setBackground(HustTheme.CONTENT_BG);
+
+        // Khởi tạo các Card
+        initCards(contentCardPanel);
+
+        mainArea.add(contentCardPanel, BorderLayout.CENTER);
+        add(mainArea, BorderLayout.CENTER);
+
+        // Chọn mặc định mục đầu tiên
+        switchCard(CARD_OVERVIEW, "Trang chủ / Tổng quan", sidebarButtons.get(0));
     }
 
     protected String getFrameTitle() {
-        return "Hệ thống Quản lý Thư viện — Bàn làm việc Thủ thư (" + staff.getUserCode() + " - " + staff.getFullName() + ")";
+        return "HUST Lib — Bàn làm việc Thủ thư (" + staff.getUserCode() + " - " + staff.getFullName() + ")";
     }
 
-    protected JPanel createHeaderPanel() {
-        JPanel header = new JPanel(new BorderLayout(15, 10));
-        header.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 224, 230)),
-                BorderFactory.createEmptyBorder(12, 20, 12, 20)
+    // =========================================================================
+    // 1. THANH ĐIỀU HƯỚNG BÊN TRÁI (SIDEBAR)
+    // =========================================================================
+    protected JPanel createSidebarPanel() {
+        JPanel sidebar = new JPanel(new BorderLayout());
+        sidebar.setPreferredSize(new Dimension(245, 0));
+        sidebar.setBackground(HustTheme.SIDEBAR_BG);
+
+        // Phần đầu Sidebar: Logo HUST Lib
+        JPanel brandPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Điểm xuyết viền đỏ tinh tế
+                g2.setColor(HustTheme.PRIMARY_RED);
+                g2.fillRect(0, 0, 4, getHeight());
+
+                // Biểu tượng sách & bánh răng nhỏ ở góc logo
+                int ix = 24, iy = 26;
+                g2.setColor(HustTheme.ACCENT_GOLD);
+                g2.drawOval(ix + 6, iy + 6, 16, 16);
+                g2.setColor(Color.WHITE);
+                g2.drawRoundRect(ix, iy, 28, 22, 6, 6);
+
+                g2.dispose();
+            }
+        };
+        brandPanel.setLayout(new BoxLayout(brandPanel, BoxLayout.Y_AXIS));
+        brandPanel.setOpaque(false);
+        brandPanel.setBorder(new EmptyBorder(24, 60, 20, 16));
+
+        JLabel lblBrandName = new JLabel("HUST Lib");
+        lblBrandName.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
+        lblBrandName.setForeground(Color.WHITE);
+
+        JLabel lblBrandUni = new JLabel("ĐH BÁCH KHOA HÀ NỘI");
+        lblBrandUni.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
+        lblBrandUni.setForeground(HustTheme.ACCENT_GOLD);
+
+        brandPanel.add(lblBrandName);
+        brandPanel.add(Box.createVerticalStrut(2));
+        brandPanel.add(lblBrandUni);
+
+        // Profile chip người dùng
+        JPanel profileChip = new JPanel(new BorderLayout(10, 0));
+        profileChip.setBackground(new Color(39, 39, 42));
+        profileChip.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(0, 14, 15, 14),
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(new Color(63, 63, 70), 1, true),
+                        new EmptyBorder(10, 12, 10, 12)
+                )
         ));
-        header.setBackground(Color.WHITE);
 
-        JPanel left = new JPanel(new GridLayout(2, 1, 2, 2));
-        left.setOpaque(false);
+        JLabel lblAvatar = new JLabel("👤");
+        lblAvatar.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
+        lblAvatar.setForeground(Color.WHITE);
 
-        JLabel lblTitle = new JLabel("HỆ THỐNG QUẢN LÝ THƯ VIỆN ĐIỆN TỬ");
-        lblTitle.setFont(lblTitle.getFont().deriveFont(Font.BOLD, 16f));
-        lblTitle.setForeground(new Color(24, 90, 157));
+        JPanel profileText = new JPanel(new GridLayout(2, 1, 2, 2));
+        profileText.setOpaque(false);
 
-        String dept = (staff.getDepartment() != null && !staff.getDepartment().isEmpty()) ? staff.getDepartment() : "Bộ phận Thư viện";
-        JLabel lblUser = new JLabel("Nhân viên: " + staff.getFullName() + " | Mã: " + staff.getUserCode() +
-                " | Vai trò: " + staff.getRoleDescription() + " | Phòng ban: " + dept);
-        lblUser.setFont(lblUser.getFont().deriveFont(Font.PLAIN, 12f));
-        lblUser.setForeground(Color.DARK_GRAY);
+        JLabel lblName = new JLabel(staff.getFullName());
+        lblName.setFont(HustTheme.FONT_BODY_BOLD);
+        lblName.setForeground(Color.WHITE);
 
-        left.add(lblTitle);
-        left.add(lblUser);
+        JLabel lblRoleBadge = new JLabel(getRoleBadgeText());
+        lblRoleBadge.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
+        lblRoleBadge.setForeground(new Color(254, 202, 202));
 
-        JButton btnLogout = new JButton("Đăng xuất");
+        profileText.add(lblName);
+        profileText.add(lblRoleBadge);
+
+        profileChip.add(lblAvatar, BorderLayout.WEST);
+        profileChip.add(profileText, BorderLayout.CENTER);
+
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.setOpaque(false);
+        topContainer.add(brandPanel, BorderLayout.NORTH);
+        topContainer.add(profileChip, BorderLayout.SOUTH);
+
+        sidebar.add(topContainer, BorderLayout.NORTH);
+
+        // Danh sách Menu
+        sidebarMenuContainer = new JPanel();
+        sidebarMenuContainer.setLayout(new BoxLayout(sidebarMenuContainer, BoxLayout.Y_AXIS));
+        sidebarMenuContainer.setOpaque(false);
+        sidebarMenuContainer.setBorder(new EmptyBorder(10, 12, 10, 12));
+
+        populateSidebarMenuItems();
+
+        sidebar.add(sidebarMenuContainer, BorderLayout.CENTER);
+
+        // Nút Đăng xuất ở dưới cùng
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setOpaque(false);
+        bottomPanel.setBorder(new EmptyBorder(12, 14, 20, 14));
+
+        JButton btnLogout = new JButton("🚪  Đăng xuất");
+        btnLogout.setFont(HustTheme.FONT_BODY_BOLD);
+        btnLogout.setForeground(new Color(244, 63, 94));
+        btnLogout.setBackground(new Color(39, 39, 42));
         btnLogout.setFocusPainted(false);
+        btnLogout.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(244, 63, 94, 80), 1, true),
+                new EmptyBorder(9, 14, 9, 14)
+        ));
+        btnLogout.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnLogout.addActionListener(e -> handleLogout());
 
-        header.add(left, BorderLayout.CENTER);
-        header.add(btnLogout, BorderLayout.EAST);
+        bottomPanel.add(btnLogout, BorderLayout.CENTER);
+        sidebar.add(bottomPanel, BorderLayout.SOUTH);
 
-        return header;
+        return sidebar;
     }
 
-    protected void initLibrarianTabs(JTabbedPane tabbed) {
-        tabbed.addTab("Quản lý Sách & Thể loại", createBooksAndCategoriesTab());
-        tabbed.addTab("Lập Phiếu Mượn Sách (ACID)", createBorrowTab());
-        tabbed.addTab("Quản lý Trả Sách", createReturnTab());
-        tabbed.addTab("Quản lý Tiền Phạt", createFinesTab());
+    protected String getRoleBadgeText() {
+        return "THỦ THƯ • " + staff.getUserCode();
+    }
+
+    protected void populateSidebarMenuItems() {
+        addSidebarItem("📊  Tổng quan", CARD_OVERVIEW, "Trang chủ / Tổng quan & Chỉ số");
+        addSidebarItem("📚  Quản lý Sách", CARD_BOOKS, "Trang chủ / Quản lý Sách & Thể loại");
+        addSidebarItem("📝  Lập Phiếu Mượn", CARD_BORROW, "Trang chủ / Lập Phiếu Mượn Sách (ACID)");
+        addSidebarItem("📥  Quản lý Trả Sách", CARD_RETURN, "Trang chủ / Quản lý Trả Sách");
+        addSidebarItem("💰  Vé Phạt & Thu Phí", CARD_FINES, "Trang chủ / Quản lý Thu Tiền Phạt");
+    }
+
+    protected void addSidebarItem(String title, String cardName, String breadcrumbText) {
+        JButton btn = new JButton(title);
+        btn.setFont(HustTheme.FONT_BODY_BOLD);
+        btn.setForeground(new Color(228, 228, 231));
+        btn.setBackground(HustTheme.SIDEBAR_BG);
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setFocusPainted(false);
+        btn.setBorder(new EmptyBorder(10, 16, 10, 16));
+        btn.setMaximumSize(new Dimension(Short.MAX_VALUE, 42));
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        btn.addActionListener(e -> switchCard(cardName, breadcrumbText, btn));
+
+        sidebarButtons.add(btn);
+        sidebarMenuContainer.add(btn);
+        sidebarMenuContainer.add(Box.createVerticalStrut(4));
+    }
+
+    protected void switchCard(String cardName, String breadcrumbText, JButton activeBtn) {
+        cardLayout.show(contentCardPanel, cardName);
+        if (lblBreadcrumb != null) {
+            lblBreadcrumb.setText(breadcrumbText);
+        }
+
+        // Cập nhật style nút active
+        for (JButton b : sidebarButtons) {
+            if (b == activeBtn) {
+                b.setBackground(HustTheme.PRIMARY_RED);
+                b.setForeground(Color.WHITE);
+            } else {
+                b.setBackground(HustTheme.SIDEBAR_BG);
+                b.setForeground(new Color(228, 228, 231));
+            }
+        }
     }
 
     // =========================================================================
-    // TAB 1: QUẢN LÝ SÁCH & THỂ LOẠI
+    // 2. THANH HEADER TRÊN CÙNG (TOP BAR)
     // =========================================================================
-    protected JPanel createBooksAndCategoriesTab() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+    protected JPanel createTopBar() {
+        JPanel topBar = new JPanel(new BorderLayout(15, 0));
+        topBar.setPreferredSize(new Dimension(0, 56));
+        topBar.setBackground(Color.WHITE);
+        topBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, HustTheme.BORDER_COLOR),
+                new EmptyBorder(10, 20, 10, 20)
+        ));
 
-        // Filter / Search Toolbar
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        toolbar.add(new JLabel("Từ khóa:"));
-        txtBookSearch = new JTextField(15);
+        // Breadcrumbs bên trái
+        lblBreadcrumb = new JLabel("Trang chủ / Tổng quan");
+        lblBreadcrumb.setFont(HustTheme.FONT_BODY_BOLD);
+        lblBreadcrumb.setForeground(HustTheme.TEXT_PRIMARY);
+        topBar.add(lblBreadcrumb, BorderLayout.WEST);
+
+        // Phần bên phải: Ngày tháng & Tìm kiếm nhanh
+        JPanel rightBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        rightBar.setOpaque(false);
+
+        LocalDate now = LocalDate.now();
+        String dateStr = "📅 " + now.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new java.util.Locale("vi", "VN")));
+        JLabel lblDate = new JLabel(dateStr);
+        lblDate.setFont(HustTheme.FONT_SMALL);
+        lblDate.setForeground(HustTheme.TEXT_MUTED);
+
+        rightBar.add(lblDate);
+        topBar.add(rightBar, BorderLayout.EAST);
+
+        return topBar;
+    }
+
+    // =========================================================================
+    // 3. KHỞI TẠO CÁC CARD TRONG NỘI DUNG CHÍNH
+    // =========================================================================
+    protected void initCards(JPanel cardPanel) {
+        cardPanel.add(createOverviewCard(), CARD_OVERVIEW);
+        cardPanel.add(createBooksCard(), CARD_BOOKS);
+        cardPanel.add(createBorrowCard(), CARD_BORROW);
+        cardPanel.add(createReturnCard(), CARD_RETURN);
+        cardPanel.add(createFinesCard(), CARD_FINES);
+    }
+
+    // CARD TỔNG QUAN (OVERVIEW & METRICS)
+    protected JPanel createOverviewCard() {
+        JPanel panel = new JPanel(new BorderLayout(15, 15));
+        panel.setBorder(new EmptyBorder(20, 24, 20, 24));
+        panel.setBackground(HustTheme.CONTENT_BG);
+
+        // Header
+        JPanel head = UIUtils.createHeaderPanel("TỔNG QUAN CHỈ SỐ HOẠT ĐỘNG THƯ VIỆN HUST",
+                "Số liệu tổng hợp thời gian thực của hệ thống thư viện Bách Khoa");
+        panel.add(head, BorderLayout.NORTH);
+
+        // Center: 4 Stat Cards
+        overviewCardsPanel = new JPanel(new GridLayout(2, 2, 16, 16));
+        overviewCardsPanel.setOpaque(false);
+
+        panel.add(overviewCardsPanel, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // CARD QUẢN LÝ SÁCH
+    protected JPanel createBooksCard() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        panel.setBackground(HustTheme.CONTENT_BG);
+
+        // Toolbar
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
+        toolbar.setOpaque(false);
+
+        toolbar.add(new JLabel("Tìm kiếm:"));
+        txtBookSearch = new JTextField(16);
+        txtBookSearch.putClientProperty("JTextField.placeholderText", "Nhập tiêu đề hoặc ISBN...");
         txtBookSearch.addActionListener(e -> searchBooks());
         toolbar.add(txtBookSearch);
 
@@ -174,11 +402,11 @@ public class LibrarianDashboardFrame extends JFrame {
         populateCategoryFilterCombo();
         toolbar.add(cboBookCategoryFilter);
 
-        JButton btnSearch = new JButton("Tìm");
+        JButton btnSearch = UIUtils.createSecondaryButton("Tìm");
         btnSearch.addActionListener(e -> searchBooks());
         toolbar.add(btnSearch);
 
-        JButton btnRefresh = new JButton("Làm mới");
+        JButton btnRefresh = UIUtils.createSecondaryButton("Làm mới");
         btnRefresh.addActionListener(e -> {
             txtBookSearch.setText("");
             cboBookCategoryFilter.setSelectedIndex(0);
@@ -186,41 +414,259 @@ public class LibrarianDashboardFrame extends JFrame {
         });
         toolbar.add(btnRefresh);
 
-        toolbar.add(new JSeparator(JSeparator.VERTICAL));
+        toolbar.add(Box.createHorizontalStrut(10));
 
-        JButton btnAddBook = new JButton("+ Thêm sách");
+        JButton btnAddBook = UIUtils.createPrimaryButton("+ Thêm Sách Mới");
         btnAddBook.addActionListener(e -> showAddBookDialog());
         toolbar.add(btnAddBook);
 
-        JButton btnEditBook = new JButton("Sửa sách");
+        JButton btnEditBook = UIUtils.createSecondaryButton("Sửa");
         btnEditBook.addActionListener(e -> showEditBookDialog());
         toolbar.add(btnEditBook);
 
-        JButton btnDeleteBook = new JButton("Xóa sách");
+        JButton btnDeleteBook = UIUtils.createSecondaryButton("Xóa");
         btnDeleteBook.addActionListener(e -> handleDeleteBook());
         toolbar.add(btnDeleteBook);
 
-        JButton btnManageCategories = new JButton("Quản lý Thể loại");
-        btnManageCategories.addActionListener(e -> showManageCategoriesDialog());
-        toolbar.add(btnManageCategories);
+        JButton btnCat = UIUtils.createSecondaryButton("Thể loại");
+        btnCat.addActionListener(e -> showManageCategoriesDialog());
+        toolbar.add(btnCat);
 
         panel.add(toolbar, BorderLayout.NORTH);
 
-        // Books Table
-        String[] columns = {"Mã ID", "ISBN", "Tiêu đề", "Tác giả", "Thể loại", "Năm XB", "Còn lại", "Tổng số", "Tình trạng"};
+        // Table
+        String[] columns = {"ID", "Mã ISBN", "Tiêu đề sách", "Tác giả", "Thể loại", "Năm XB", "Còn lại / Tổng", "Trạng thái"};
         bookTableModel = new DefaultTableModel(columns, 0);
         bookTable = UIUtils.createReadonlyTable(bookTableModel);
-        UIUtils.centerAlignColumns(bookTable, 0, 1, 5, 6, 7, 8);
-        UIUtils.setColumnWidth(bookTable, 0, 60);
+        UIUtils.centerAlignColumns(bookTable, 0, 1, 5, 6);
+        UIUtils.setStatusPillRenderer(bookTable, 7);
+
+        UIUtils.setColumnWidth(bookTable, 0, 50);
         UIUtils.setColumnWidth(bookTable, 1, 120);
         UIUtils.setColumnWidth(bookTable, 2, 280);
         UIUtils.setColumnWidth(bookTable, 3, 160);
-        UIUtils.setColumnWidth(bookTable, 4, 120);
+        UIUtils.setColumnWidth(bookTable, 4, 130);
+        UIUtils.setColumnWidth(bookTable, 7, 110);
 
-        panel.add(new JScrollPane(bookTable), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(bookTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
+        panel.add(scrollPane, BorderLayout.CENTER);
+
         return panel;
     }
 
+    // CARD LẬP PHIẾU MƯỢN ACID
+    protected JPanel createBorrowCard() {
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
+        wrapper.setBackground(HustTheme.CONTENT_BG);
+
+        JPanel formCard = new JPanel(new GridBagLayout());
+        formCard.setPreferredSize(new Dimension(660, 510));
+        formCard.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1, true),
+                new EmptyBorder(25, 30, 25, 30)
+        ));
+        formCard.setBackground(Color.WHITE);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        JLabel lblTitle = new JLabel("LẬP PHIẾU MƯỢN SÁCH — GIAO DỊCH ACID");
+        lblTitle.setFont(HustTheme.FONT_HEADER);
+        lblTitle.setForeground(HustTheme.PRIMARY_RED);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 3;
+        formCard.add(lblTitle, gbc);
+
+        gbc.gridwidth = 1;
+
+        // Độc giả
+        gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.weightx = 0.25;
+        formCard.add(new JLabel("Mã độc giả / MSSV:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.55;
+        txtBorrowMemberCode = new JTextField();
+        txtBorrowMemberCode.putClientProperty("JTextField.placeholderText", "VD: MBR001");
+        txtBorrowMemberCode.addActionListener(e -> validateBorrowMember());
+        formCard.add(txtBorrowMemberCode, gbc);
+
+        gbc.gridx = 2;
+        gbc.weightx = 0.20;
+        JButton btnCheckMember = UIUtils.createSecondaryButton("Kiểm tra");
+        btnCheckMember.addActionListener(e -> validateBorrowMember());
+        formCard.add(btnCheckMember, gbc);
+
+        // Thông tin Độc giả
+        gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+        lblBorrowMemberInfo = new JLabel("<html><i>Nhập mã sinh viên / độc giả và nhấn Kiểm tra để xác thực...</i></html>");
+        lblBorrowMemberInfo.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+                new EmptyBorder(8, 12, 8, 12)
+        ));
+        lblBorrowMemberInfo.setBackground(new Color(248, 250, 252));
+        lblBorrowMemberInfo.setOpaque(true);
+        formCard.add(lblBorrowMemberInfo, gbc);
+
+        // Sách
+        gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridwidth = 1;
+        formCard.add(new JLabel("Mã ID / ISBN Sách:"), gbc);
+
+        gbc.gridx = 1;
+        txtBorrowBookId = new JTextField();
+        txtBorrowBookId.putClientProperty("JTextField.placeholderText", "VD: 1 hoặc 978-604-...");
+        txtBorrowBookId.addActionListener(e -> validateBorrowBook());
+        formCard.add(txtBorrowBookId, gbc);
+
+        gbc.gridx = 2;
+        JButton btnCheckBook = UIUtils.createSecondaryButton("Kiểm tra");
+        btnCheckBook.addActionListener(e -> validateBorrowBook());
+        formCard.add(btnCheckBook, gbc);
+
+        // Thông tin Sách
+        gbc.gridy = 4;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+        lblBorrowBookInfo = new JLabel("<html><i>Nhập mã sách và nhấn Kiểm tra để xác thực số lượng bản sao...</i></html>");
+        lblBorrowBookInfo.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+                new EmptyBorder(8, 12, 8, 12)
+        ));
+        lblBorrowBookInfo.setBackground(new Color(248, 250, 252));
+        lblBorrowBookInfo.setOpaque(true);
+        formCard.add(lblBorrowBookInfo, gbc);
+
+        // Thời hạn mượn
+        gbc.gridy = 5;
+        gbc.gridx = 0;
+        gbc.gridwidth = 1;
+        formCard.add(new JLabel("Thời hạn mượn:"), gbc);
+
+        gbc.gridx = 1;
+        spnBorrowDays = new JSpinner(new SpinnerNumberModel(14, 1, 60, 1));
+        JPanel dayP = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        dayP.setOpaque(false);
+        dayP.add(spnBorrowDays);
+        dayP.add(new JLabel("ngày (Mặc định 14 ngày)"));
+        formCard.add(dayP, gbc);
+
+        // Nút Xác nhận
+        gbc.gridy = 6;
+        gbc.gridx = 0;
+        gbc.gridwidth = 3;
+        gbc.insets = new Insets(18, 8, 8, 8);
+        JButton btnSubmit = UIUtils.createPrimaryButton("Xác nhận Lập Phiếu Mượn (ACID)");
+        btnSubmit.setFont(HustTheme.FONT_BODY_BOLD.deriveFont(14f));
+        btnSubmit.addActionListener(e -> executeBorrowTransaction());
+        formCard.add(btnSubmit, gbc);
+
+        wrapper.add(formCard);
+        return wrapper;
+    }
+
+    // CARD QUẢN LÝ TRẢ SÁCH
+    protected JPanel createReturnCard() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        panel.setBackground(HustTheme.CONTENT_BG);
+
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
+        toolbar.setOpaque(false);
+
+        toolbar.add(new JLabel("Tìm phiếu:"));
+        txtReturnSearch = new JTextField(16);
+        txtReturnSearch.putClientProperty("JTextField.placeholderText", "Mã phiếu, độc giả, sách...");
+        txtReturnSearch.addActionListener(e -> filterReturnTable());
+        toolbar.add(txtReturnSearch);
+
+        JButton btnFilter = UIUtils.createSecondaryButton("Lọc");
+        btnFilter.addActionListener(e -> filterReturnTable());
+        toolbar.add(btnFilter);
+
+        JButton btnRefresh = UIUtils.createSecondaryButton("Làm mới");
+        btnRefresh.addActionListener(e -> {
+            txtReturnSearch.setText("");
+            loadReturnTable();
+        });
+        toolbar.add(btnRefresh);
+
+        toolbar.add(Box.createHorizontalStrut(10));
+
+        JButton btnReturn = UIUtils.createPrimaryButton("Xác nhận Trả Sách");
+        btnReturn.addActionListener(e -> executeReturnBook());
+        toolbar.add(btnReturn);
+
+        panel.add(toolbar, BorderLayout.NORTH);
+
+        String[] cols = {"Mã phiếu", "Mã độc giả", "Tên độc giả", "Mã sách", "Tên sách", "Ngày mượn", "Hạn trả", "Trạng thái", "Quá hạn"};
+        returnTableModel = new DefaultTableModel(cols, 0);
+        returnTable = UIUtils.createReadonlyTable(returnTableModel);
+        UIUtils.centerAlignColumns(returnTable, 0, 1, 3, 5, 6, 8);
+        UIUtils.setStatusPillRenderer(returnTable, 7);
+
+        UIUtils.setColumnWidth(returnTable, 0, 80);
+        UIUtils.setColumnWidth(returnTable, 1, 90);
+        UIUtils.setColumnWidth(returnTable, 2, 160);
+        UIUtils.setColumnWidth(returnTable, 4, 250);
+
+        JScrollPane scroll = new JScrollPane(returnTable);
+        scroll.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
+        panel.add(scroll, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // CARD QUẢN LÝ TIỀN PHẠT
+    protected JPanel createFinesCard() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBorder(new EmptyBorder(16, 20, 16, 20));
+        panel.setBackground(HustTheme.CONTENT_BG);
+
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
+        toolbar.setOpaque(false);
+
+        toolbar.add(new JLabel("Lọc theo trạng thái:"));
+        cboFineStatusFilter = new JComboBox<>(new String[]{"-- Tất cả phiếu phạt --", "Chưa thu (UNPAID)", "Đã thu (PAID)"});
+        cboFineStatusFilter.addActionListener(e -> loadFinesTable());
+        toolbar.add(cboFineStatusFilter);
+
+        JButton btnRefresh = UIUtils.createSecondaryButton("Làm mới");
+        btnRefresh.addActionListener(e -> loadFinesTable());
+        toolbar.add(btnRefresh);
+
+        toolbar.add(Box.createHorizontalStrut(10));
+
+        JButton btnPayFine = UIUtils.createPrimaryButton("Thu Tiền Phạt");
+        btnPayFine.addActionListener(e -> executePayFine());
+        toolbar.add(btnPayFine);
+
+        panel.add(toolbar, BorderLayout.NORTH);
+
+        String[] cols = {"Mã phạt", "Mã phiếu mượn", "Mã độc giả", "Họ tên độc giả", "Số ngày trễ", "Số tiền phạt", "Lý do", "Trạng thái", "Ngày nộp phạt"};
+        fineTableModel = new DefaultTableModel(cols, 0);
+        fineTable = UIUtils.createReadonlyTable(fineTableModel);
+        UIUtils.centerAlignColumns(fineTable, 0, 1, 2, 4, 8);
+        UIUtils.rightAlignColumns(fineTable, 5);
+        UIUtils.setStatusPillRenderer(fineTable, 7);
+
+        JScrollPane scroll = new JScrollPane(fineTable);
+        scroll.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
+        panel.add(scroll, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    // =========================================================================
+    // CÁC HÀM XỬ LÝ NGHIỆP VỤ & TẢI DỮ LIỆU
+    // =========================================================================
     private void populateCategoryFilterCombo() {
         cboBookCategoryFilter.removeAllItems();
         cboBookCategoryFilter.addItem(new CategoryItem(0, "-- Tất cả thể loại --"));
@@ -270,7 +716,7 @@ public class LibrarianDashboardFrame extends JFrame {
         bookTableModel.setRowCount(0);
         for (Book b : books) {
             String catName = categoryMap.getOrDefault(b.getCategoryId(), "Không xác định");
-            String status = b.isAvailable() ? "Còn bản sao" : "Đã hết";
+            String status = b.isAvailable() ? "Còn sách" : "Hết sách";
             bookTableModel.addRow(new Object[]{
                     b.getBookId(),
                     b.getIsbn(),
@@ -278,21 +724,20 @@ public class LibrarianDashboardFrame extends JFrame {
                     b.getAuthor(),
                     catName,
                     b.getPublishYear(),
-                    b.getAvailableCopies(),
-                    b.getTotalCopies(),
+                    b.getAvailableCopies() + " / " + b.getTotalCopies(),
                     status
             });
         }
     }
 
     private void showAddBookDialog() {
-        JDialog dialog = new JDialog(this, "Thêm Đầu Sách Mới", true);
-        dialog.setSize(460, 420);
+        JDialog dialog = new JDialog(this, "Thêm Đầu Sách Mới — HUST Lib", true);
+        dialog.setSize(480, 430);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
         JPanel form = new JPanel(new GridLayout(6, 2, 10, 12));
-        form.setBorder(BorderFactory.createEmptyBorder(20, 25, 10, 25));
+        form.setBorder(new EmptyBorder(20, 25, 10, 25));
 
         JTextField txtIsbn = new JTextField();
         JTextField txtTitle = new JTextField();
@@ -308,9 +753,7 @@ public class LibrarianDashboardFrame extends JFrame {
         }
 
         JSpinner spnYear = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), 1800, 2100, 1));
-        JSpinner.NumberEditor yearEditor = new JSpinner.NumberEditor(spnYear, "#");
-        spnYear.setEditor(yearEditor);
-
+        spnYear.setEditor(new JSpinner.NumberEditor(spnYear, "#"));
         JSpinner spnTotal = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
 
         form.add(new JLabel("Mã ISBN (*):"));
@@ -329,8 +772,8 @@ public class LibrarianDashboardFrame extends JFrame {
         dialog.add(form, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
-        JButton btnSave = new JButton("Lưu sách");
-        JButton btnCancel = new JButton("Hủy bỏ");
+        JButton btnSave = UIUtils.createPrimaryButton("Lưu sách");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy bỏ");
 
         btnSave.addActionListener(e -> {
             try {
@@ -346,6 +789,7 @@ public class LibrarianDashboardFrame extends JFrame {
                 UIUtils.showSuccess(dialog, "Thêm đầu sách mới thành công!");
                 dialog.dispose();
                 loadBooksTable();
+                loadOverviewMetrics();
             } catch (Exception ex) {
                 UIUtils.showError(dialog, "Lỗi thêm sách: " + ex.getMessage());
             }
@@ -382,7 +826,7 @@ public class LibrarianDashboardFrame extends JFrame {
         dialog.setLayout(new BorderLayout(10, 10));
 
         JPanel form = new JPanel(new GridLayout(7, 2, 10, 12));
-        form.setBorder(BorderFactory.createEmptyBorder(20, 25, 10, 25));
+        form.setBorder(new EmptyBorder(20, 25, 10, 25));
 
         JTextField txtIsbn = new JTextField(book.getIsbn());
         txtIsbn.setEditable(false);
@@ -404,11 +848,10 @@ public class LibrarianDashboardFrame extends JFrame {
 
         JSpinner spnYear = new JSpinner(new SpinnerNumberModel(book.getPublishYear(), 1800, 2100, 1));
         spnYear.setEditor(new JSpinner.NumberEditor(spnYear, "#"));
-
         JSpinner spnTotal = new JSpinner(new SpinnerNumberModel(book.getTotalCopies(), 1, 1000, 1));
         JSpinner spnAvailable = new JSpinner(new SpinnerNumberModel(book.getAvailableCopies(), 0, 1000, 1));
 
-        form.add(new JLabel("Mã ISBN (Cố định):"));
+        form.add(new JLabel("Mã ISBN:"));
         form.add(txtIsbn);
         form.add(new JLabel("Tiêu đề sách (*):"));
         form.add(txtTitle);
@@ -426,8 +869,8 @@ public class LibrarianDashboardFrame extends JFrame {
         dialog.add(form, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 15));
-        JButton btnSave = new JButton("Lưu thay đổi");
-        JButton btnCancel = new JButton("Hủy bỏ");
+        JButton btnSave = UIUtils.createPrimaryButton("Lưu thay đổi");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy bỏ");
 
         btnSave.addActionListener(e -> {
             try {
@@ -438,14 +881,13 @@ public class LibrarianDashboardFrame extends JFrame {
                     book.setCategoryId(selCat.id);
                 }
                 book.setPublishYear((Integer) spnYear.getValue());
-                int tot = (Integer) spnTotal.getValue();
-                int avail = (Integer) spnAvailable.getValue();
-                book.setCopies(tot, avail);
+                book.setCopies((Integer) spnTotal.getValue(), (Integer) spnAvailable.getValue());
 
                 bookService.updateBook(book);
                 UIUtils.showSuccess(dialog, "Cập nhật sách thành công!");
                 dialog.dispose();
                 loadBooksTable();
+                loadOverviewMetrics();
             } catch (Exception ex) {
                 UIUtils.showError(dialog, "Lỗi cập nhật: " + ex.getMessage());
             }
@@ -469,11 +911,12 @@ public class LibrarianDashboardFrame extends JFrame {
         int bookId = (Integer) bookTableModel.getValueAt(selectedRow, 0);
         String title = (String) bookTableModel.getValueAt(selectedRow, 2);
 
-        if (UIUtils.confirm(this, "Bạn có chắc chắn muốn xóa cuốn sách \"" + title + "\" (ID: " + bookId + ") không?", "Xác nhận xóa sách")) {
+        if (UIUtils.confirm(this, "Bạn có chắc chắn muốn xóa cuốn sách \"" + title + "\" (ID: " + bookId + ")?", "Xác nhận xóa sách")) {
             try {
                 bookService.deleteBook(bookId);
                 UIUtils.showSuccess(this, "Đã xóa sách thành công!");
                 loadBooksTable();
+                loadOverviewMetrics();
             } catch (Exception e) {
                 UIUtils.showError(this, "Không thể xóa sách: " + e.getMessage());
             }
@@ -481,19 +924,17 @@ public class LibrarianDashboardFrame extends JFrame {
     }
 
     private void showManageCategoriesDialog() {
-        JDialog dialog = new JDialog(this, "Quản lý Danh mục Thể loại Sách", true);
-        dialog.setSize(600, 450);
+        JDialog dialog = new JDialog(this, "Danh Mục Thể Loại Sách — HUST Lib", true);
+        dialog.setSize(580, 420);
         dialog.setLocationRelativeTo(this);
         dialog.setLayout(new BorderLayout(10, 10));
 
-        String[] cols = {"Mã thể loại", "Tên thể loại", "Mô tả"};
+        String[] cols = {"Mã", "Tên thể loại", "Mô tả"};
         DefaultTableModel model = new DefaultTableModel(cols, 0);
         JTable table = UIUtils.createReadonlyTable(model);
         UIUtils.centerAlignColumns(table, 0);
-        UIUtils.setColumnWidth(table, 0, 90);
-        UIUtils.setColumnWidth(table, 1, 160);
 
-        Runnable refreshCatTable = () -> {
+        Runnable refreshCat = () -> {
             try {
                 model.setRowCount(0);
                 List<Category> list = categoryService.getAllCategories();
@@ -505,23 +946,21 @@ public class LibrarianDashboardFrame extends JFrame {
             }
         };
 
-        refreshCatTable.run();
+        refreshCat.run();
         dialog.add(new JScrollPane(table), BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
-        JButton btnAdd = new JButton("Thêm thể loại");
-        JButton btnEdit = new JButton("Sửa thể loại");
-        JButton btnDel = new JButton("Xóa thể loại");
-        JButton btnClose = new JButton("Đóng");
+        JButton btnAdd = UIUtils.createPrimaryButton("+ Thêm thể loại");
+        JButton btnClose = UIUtils.createSecondaryButton("Đóng");
 
         btnAdd.addActionListener(e -> {
-            String name = JOptionPane.showInputDialog(dialog, "Nhập tên thể loại mới:", "Thêm thể loại", JOptionPane.PLAIN_MESSAGE);
+            String name = JOptionPane.showInputDialog(dialog, "Tên thể loại mới:", "Thêm thể loại", JOptionPane.PLAIN_MESSAGE);
             if (name != null && !name.trim().isEmpty()) {
-                String desc = JOptionPane.showInputDialog(dialog, "Nhập mô tả thể loại:", "Thêm thể loại", JOptionPane.PLAIN_MESSAGE);
+                String desc = JOptionPane.showInputDialog(dialog, "Mô tả thể loại:", "Thêm thể loại", JOptionPane.PLAIN_MESSAGE);
                 try {
                     categoryService.createCategory(name.trim(), desc != null ? desc.trim() : "");
                     UIUtils.showSuccess(dialog, "Thêm thể loại thành công!");
-                    refreshCatTable.run();
+                    refreshCat.run();
                     initCategoryCache();
                     populateCategoryFilterCombo();
                     loadBooksTable();
@@ -531,193 +970,18 @@ public class LibrarianDashboardFrame extends JFrame {
             }
         });
 
-        btnEdit.addActionListener(e -> {
-            int row = table.getSelectedRow();
-            if (row < 0) {
-                UIUtils.showWarning(dialog, "Vui lòng chọn thể loại cần sửa.");
-                return;
-            }
-            int catId = (Integer) model.getValueAt(row, 0);
-            String currName = (String) model.getValueAt(row, 1);
-            String currDesc = (String) model.getValueAt(row, 2);
-
-            String newName = JOptionPane.showInputDialog(dialog, "Tên thể loại:", currName);
-            if (newName != null && !newName.trim().isEmpty()) {
-                String newDesc = JOptionPane.showInputDialog(dialog, "Mô tả thể loại:", currDesc != null ? currDesc : "");
-                try {
-                    categoryService.updateCategory(catId, newName.trim(), newDesc != null ? newDesc.trim() : "");
-                    UIUtils.showSuccess(dialog, "Cập nhật thể loại thành công!");
-                    refreshCatTable.run();
-                    initCategoryCache();
-                    populateCategoryFilterCombo();
-                    loadBooksTable();
-                } catch (Exception ex) {
-                    UIUtils.showError(dialog, "Lỗi sửa thể loại: " + ex.getMessage());
-                }
-            }
-        });
-
-        btnDel.addActionListener(e -> {
-            int row = table.getSelectedRow();
-            if (row < 0) {
-                UIUtils.showWarning(dialog, "Vui lòng chọn thể loại cần xóa.");
-                return;
-            }
-            int catId = (Integer) model.getValueAt(row, 0);
-            String name = (String) model.getValueAt(row, 1);
-            if (UIUtils.confirm(dialog, "Bạn có chắc chắn muốn xóa thể loại \"" + name + "\"?", "Xác nhận xóa")) {
-                try {
-                    categoryService.deleteCategory(catId);
-                    UIUtils.showSuccess(dialog, "Đã xóa thể loại!");
-                    refreshCatTable.run();
-                    initCategoryCache();
-                    populateCategoryFilterCombo();
-                    loadBooksTable();
-                } catch (Exception ex) {
-                    UIUtils.showError(dialog, "Không thể xóa thể loại: " + ex.getMessage());
-                }
-            }
-        });
-
         btnClose.addActionListener(e -> dialog.dispose());
-
         btnPanel.add(btnAdd);
-        btnPanel.add(btnEdit);
-        btnPanel.add(btnDel);
         btnPanel.add(btnClose);
         dialog.add(btnPanel, BorderLayout.SOUTH);
 
         dialog.setVisible(true);
     }
 
-    // =========================================================================
-    // TAB 2: LẬP PHIẾU MƯỢN SÁCH (ACID TRANSACTIONS)
-    // =========================================================================
-    protected JPanel createBorrowTab() {
-        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 20));
-
-        JPanel formCard = new JPanel(new GridBagLayout());
-        formCard.setPreferredSize(new Dimension(640, 520));
-        formCard.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 224, 230), 1),
-                BorderFactory.createEmptyBorder(25, 30, 25, 30)
-        ));
-        formCard.setBackground(Color.WHITE);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 8, 8, 8);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Title
-        JLabel lblHeader = new JLabel("LẬP PHIẾU MƯỢN SÁCH — GIAO DỊCH ACID");
-        lblHeader.setFont(lblHeader.getFont().deriveFont(Font.BOLD, 16f));
-        lblHeader.setForeground(new Color(24, 90, 157));
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = 3;
-        formCard.add(lblHeader, gbc);
-
-        gbc.gridwidth = 1;
-
-        // Row 1: Member lookup
-        gbc.gridy = 1;
-        gbc.gridx = 0;
-        gbc.weightx = 0.25;
-        formCard.add(new JLabel("Mã/ID Độc giả:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.55;
-        txtBorrowMemberCode = new JTextField();
-        txtBorrowMemberCode.setToolTipText("Nhập mã độc giả (VD: MBR001) hoặc ID số");
-        txtBorrowMemberCode.addActionListener(e -> validateBorrowMember());
-        formCard.add(txtBorrowMemberCode, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 0.20;
-        JButton btnCheckMember = new JButton("Kiểm tra");
-        btnCheckMember.addActionListener(e -> validateBorrowMember());
-        formCard.add(btnCheckMember, gbc);
-
-        // Member status box
-        gbc.gridy = 2;
-        gbc.gridx = 0;
-        gbc.gridwidth = 3;
-        lblBorrowMemberInfo = new JLabel("<html><i>Nhập mã độc giả và nhấn Kiểm tra để xác thực điều kiện mượn...</i></html>");
-        lblBorrowMemberInfo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        lblBorrowMemberInfo.setBackground(new Color(248, 249, 250));
-        lblBorrowMemberInfo.setOpaque(true);
-        formCard.add(lblBorrowMemberInfo, gbc);
-
-        // Row 3: Book lookup
-        gbc.gridy = 3;
-        gbc.gridx = 0;
-        gbc.gridwidth = 1;
-        gbc.weightx = 0.25;
-        formCard.add(new JLabel("Mã ID/ISBN Sách:"), gbc);
-
-        gbc.gridx = 1;
-        gbc.weightx = 0.55;
-        txtBorrowBookId = new JTextField();
-        txtBorrowBookId.setToolTipText("Nhập ID sách hoặc mã ISBN");
-        txtBorrowBookId.addActionListener(e -> validateBorrowBook());
-        formCard.add(txtBorrowBookId, gbc);
-
-        gbc.gridx = 2;
-        gbc.weightx = 0.20;
-        JButton btnCheckBook = new JButton("Kiểm tra");
-        btnCheckBook.addActionListener(e -> validateBorrowBook());
-        formCard.add(btnCheckBook, gbc);
-
-        // Book status box
-        gbc.gridy = 4;
-        gbc.gridx = 0;
-        gbc.gridwidth = 3;
-        lblBorrowBookInfo = new JLabel("<html><i>Nhập mã sách và nhấn Kiểm tra để xác thực số lượng bản sao...</i></html>");
-        lblBorrowBookInfo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(230, 230, 230)),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
-        lblBorrowBookInfo.setBackground(new Color(248, 249, 250));
-        lblBorrowBookInfo.setOpaque(true);
-        formCard.add(lblBorrowBookInfo, gbc);
-
-        // Row 5: Borrow days
-        gbc.gridy = 5;
-        gbc.gridx = 0;
-        gbc.gridwidth = 1;
-        formCard.add(new JLabel("Thời hạn mượn:"), gbc);
-
-        gbc.gridx = 1;
-        spnBorrowDays = new JSpinner(new SpinnerNumberModel(14, 1, 60, 1));
-        JPanel dayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        dayPanel.setOpaque(false);
-        dayPanel.add(spnBorrowDays);
-        dayPanel.add(new JLabel("ngày (Mặc định 14 ngày)"));
-        formCard.add(dayPanel, gbc);
-
-        // Row 6: Submit Button
-        gbc.gridy = 6;
-        gbc.gridx = 0;
-        gbc.gridwidth = 3;
-        gbc.insets = new Insets(20, 8, 8, 8);
-        JButton btnSubmitBorrow = new JButton("Xác nhận Lập Phiếu Mượn (ACID Transaction)");
-        btnSubmitBorrow.setFont(btnSubmitBorrow.getFont().deriveFont(Font.BOLD, 14f));
-        btnSubmitBorrow.setForeground(new Color(24, 90, 157));
-        btnSubmitBorrow.setPreferredSize(new Dimension(280, 40));
-        btnSubmitBorrow.addActionListener(e -> executeBorrowTransaction());
-        formCard.add(btnSubmitBorrow, gbc);
-
-        wrapper.add(formCard);
-        return wrapper;
-    }
-
     private void validateBorrowMember() {
         String input = txtBorrowMemberCode.getText().trim();
         if (input.isEmpty()) {
-            UIUtils.showWarning(this, "Vui lòng nhập Mã độc giả (VD: MBR001) hoặc ID.");
+            UIUtils.showWarning(this, "Vui lòng nhập Mã độc giả / MSSV.");
             return;
         }
 
@@ -742,9 +1006,9 @@ public class LibrarianDashboardFrame extends JFrame {
 
             StringBuilder sb = new StringBuilder("<html>");
             sb.append("<b>Họ tên:</b> ").append(m.getFullName()).append(" (Mã: ").append(m.getUserCode()).append(")<br>");
-            sb.append("<b>Trạng thái:</b> ").append(active ? "<span style='color:green;'>ACTIVE</span>" : "<span style='color:red;'>LOCKED (Bị khóa)</span>").append(" | ");
+            sb.append("<b>Trạng thái:</b> ").append(active ? "<span style='color:green;'>ACTIVE</span>" : "<span style='color:red;'>LOCKED (Khóa)</span>").append(" | ");
             sb.append("<b>Đang mượn:</b> ").append(m.getCurrentBorrowCount()).append("/").append(m.getMaxBorrowLimit()).append(" cuốn | ");
-            sb.append("<b>Nợ phạt:</b> ").append(hasFines ? "<span style='color:red;'>CÓ VÉ PHẠT CHƯA NỘP</span>" : "<span style='color:green;'>Không nợ</span>");
+            sb.append("<b>Nợ phạt:</b> ").append(hasFines ? "<span style='color:red;'>CÓ NỢ PHẠT CHƯA NỘP</span>" : "<span style='color:green;'>Không nợ</span>");
 
             if (!active || !quotaAvailable || hasFines) {
                 sb.append("<br><b style='color:red;'>=> Không đủ điều kiện mượn sách!</b>");
@@ -795,7 +1059,7 @@ public class LibrarianDashboardFrame extends JFrame {
         if (currentBorrowMember == null) {
             validateBorrowMember();
             if (currentBorrowMember == null) {
-                UIUtils.showWarning(this, "Vui lòng kiểm tra và xác thực Độc giả trước.");
+                UIUtils.showWarning(this, "Vui lòng xác thực Độc giả trước.");
                 return;
             }
         }
@@ -803,7 +1067,7 @@ public class LibrarianDashboardFrame extends JFrame {
         if (currentBorrowBook == null) {
             validateBorrowBook();
             if (currentBorrowBook == null) {
-                UIUtils.showWarning(this, "Vui lòng kiểm tra và xác thực Đầu sách trước.");
+                UIUtils.showWarning(this, "Vui lòng xác thực Đầu sách trước.");
                 return;
             }
         }
@@ -814,92 +1078,36 @@ public class LibrarianDashboardFrame extends JFrame {
             BorrowRecord record = borrowService.borrowBook(currentBorrowMember.getUserId(), currentBorrowBook.getBookId(), staff.getUserId(), days);
 
             UIUtils.showSuccess(this, "Mượn sách thành công!\n" +
-                    "- Mã phiếu mượn: #" + record.getRecordId() + "\n" +
-                    "- Độc giả: " + currentBorrowMember.getFullName() + "\n" +
+                    "- Mã phiếu: #" + record.getRecordId() + "\n" +
+                    "- Bạn đọc: " + currentBorrowMember.getFullName() + "\n" +
                     "- Sách: " + currentBorrowBook.getTitle() + "\n" +
                     "- Hạn trả: " + record.getDueDate() + "\n\n" +
-                    "(Giao dịch ACID hoàn tất: Đã trừ tồn kho và tăng số sách mượn của độc giả)");
+                    "(Giao dịch ACID hoàn tất: Đã trừ tồn kho và cập nhật số sách mượn)");
 
-            // Reset form
             txtBorrowMemberCode.setText("");
             txtBorrowBookId.setText("");
-            lblBorrowMemberInfo.setText("<html><i>Nhập mã độc giả và nhấn Kiểm tra để xác thực điều kiện mượn...</i></html>");
+            lblBorrowMemberInfo.setText("<html><i>Nhập mã sinh viên / độc giả và nhấn Kiểm tra để xác thực...</i></html>");
             lblBorrowBookInfo.setText("<html><i>Nhập mã sách và nhấn Kiểm tra để xác thực số lượng bản sao...</i></html>");
             currentBorrowMember = null;
             currentBorrowBook = null;
 
             loadBooksTable();
             loadReturnTable();
-        } catch (BorrowException | ResourceNotFoundException | ValidationException be) {
-            UIUtils.showError(this, "Không thể mượn sách: " + be.getMessage());
+            loadOverviewMetrics();
         } catch (Exception ex) {
-            UIUtils.showError(this, "Giao dịch lỗi hệ thống: " + ex.getMessage());
+            UIUtils.showError(this, "Không thể mượn sách: " + ex.getMessage());
         }
-    }
-
-    // =========================================================================
-    // TAB 3: QUẢN LÝ TRẢ SÁCH
-    // =========================================================================
-    protected JPanel createReturnTab() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        // Toolbar
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        toolbar.add(new JLabel("Tìm phiếu mượn:"));
-        txtReturnSearch = new JTextField(16);
-        txtReturnSearch.setToolTipText("Lọc theo Mã phiếu, Mã độc giả, hoặc Mã sách");
-        txtReturnSearch.addActionListener(e -> filterReturnTable());
-        toolbar.add(txtReturnSearch);
-
-        JButton btnFilter = new JButton("Lọc");
-        btnFilter.addActionListener(e -> filterReturnTable());
-        toolbar.add(btnFilter);
-
-        JButton btnRefresh = new JButton("Làm mới");
-        btnRefresh.addActionListener(e -> {
-            txtReturnSearch.setText("");
-            loadReturnTable();
-        });
-        toolbar.add(btnRefresh);
-
-        toolbar.add(new JSeparator(JSeparator.VERTICAL));
-
-        JButton btnReturn = new JButton("Xác nhận Trả sách");
-        btnReturn.setFont(btnReturn.getFont().deriveFont(Font.BOLD, 13f));
-        btnReturn.setForeground(new Color(24, 90, 157));
-        btnReturn.addActionListener(e -> executeReturnBook());
-        toolbar.add(btnReturn);
-
-        panel.add(toolbar, BorderLayout.NORTH);
-
-        // Table
-        String[] columns = {"Mã phiếu", "Mã độc giả", "Tên độc giả", "Mã sách", "Tên sách", "Ngày mượn", "Hạn trả", "Trạng thái", "Quá hạn (ngày)"};
-        returnTableModel = new DefaultTableModel(columns, 0);
-        returnTable = UIUtils.createReadonlyTable(returnTableModel);
-        UIUtils.centerAlignColumns(returnTable, 0, 1, 3, 5, 6, 7, 8);
-        UIUtils.setColumnWidth(returnTable, 0, 80);
-        UIUtils.setColumnWidth(returnTable, 1, 90);
-        UIUtils.setColumnWidth(returnTable, 2, 160);
-        UIUtils.setColumnWidth(returnTable, 3, 70);
-        UIUtils.setColumnWidth(returnTable, 4, 250);
-
-        panel.add(new JScrollPane(returnTable), BorderLayout.CENTER);
-
-        return panel;
     }
 
     public void loadReturnTable() {
         try {
             List<BorrowRecord> list = borrowService.getAllBorrowRecords();
-            // Chỉ lấy các phiếu chưa trả (BORROWED hoặc OVERDUE)
-            List<BorrowRecord> activeRecords = list.stream()
+            List<BorrowRecord> active = list.stream()
                     .filter(r -> r.getStatus() == BorrowStatus.BORROWED || r.getStatus() == BorrowStatus.OVERDUE)
                     .toList();
-
-            renderReturnTable(activeRecords);
+            renderReturnTable(active);
         } catch (Exception e) {
-            UIUtils.showError(this, "Không thể tải danh sách phiếu mượn trả: " + e.getMessage());
+            UIUtils.showError(this, "Không thể tải danh sách phiếu mượn: " + e.getMessage());
         }
     }
 
@@ -975,85 +1183,42 @@ public class LibrarianDashboardFrame extends JFrame {
     private void executeReturnBook() {
         int row = returnTable.getSelectedRow();
         if (row < 0) {
-            UIUtils.showWarning(this, "Vui lòng chọn một phiếu mượn từ bảng để trả sách.");
+            UIUtils.showWarning(this, "Vui lòng chọn một phiếu mượn từ bảng.");
             return;
         }
 
         int recordId = (Integer) returnTableModel.getValueAt(row, 0);
         String bookTitle = (String) returnTableModel.getValueAt(row, 4);
 
-        if (!UIUtils.confirm(this, "Xác nhận nhận lại sách \"" + bookTitle + "\" cho phiếu #" + recordId + "?", "Xác nhận trả sách")) {
+        if (!UIUtils.confirm(this, "Xác nhận nhận lại sách \"" + bookTitle + "\" (Phiếu #" + recordId + ")?", "Xác nhận trả sách")) {
             return;
         }
 
         try {
-            BorrowRecord updated = borrowService.returnBook(recordId);
+            borrowService.returnBook(recordId);
 
-            // Kiểm tra xem có vé phạt sinh ra do quá hạn không
             try {
                 Fine fine = fineService.getFineByRecordId(recordId);
                 if (fine != null && fine.getStatus() == FineStatus.UNPAID) {
                     UIUtils.showWarning(this, "Đã nhận lại sách thành công!\n\n" +
-                            "CẢNH BÁO PHẠT QUÁ HẠN:\n" +
-                            "- Sách đã bị trả trễ: " + fine.getOverdueDays() + " ngày\n" +
-                            "- Mức phạt (2.000 VNĐ/ngày): " + UIUtils.formatCurrency(fine.getFineAmount()) + "\n" +
-                            "- Trạng thái phạt: CHƯA THU (UNPAID)\n" +
-                            "Vui lòng chuyển qua tab 'Quản lý Tiền Phạt' để thu tiền bạn đọc.");
+                            "CẢNH BÁO QUÁ HẠN:\n" +
+                            "- Trả trễ: " + fine.getOverdueDays() + " ngày\n" +
+                            "- Tiền phạt: " + UIUtils.formatCurrency(fine.getFineAmount()) + "\n" +
+                            "Vui lòng chuyển qua mục 'Vé Phạt & Thu Phí' để thu tiền bạn đọc.");
                 } else {
-                    UIUtils.showSuccess(this, "Trả sách đúng hạn thành công! Tồn kho sách đã được cập nhật hoàn lại.");
+                    UIUtils.showSuccess(this, "Trả sách đúng hạn thành công! Tồn kho sách đã được hoàn lại.");
                 }
             } catch (Exception ignored) {
-                UIUtils.showSuccess(this, "Trả sách thành công! Tồn kho sách đã được cập nhật hoàn lại.");
+                UIUtils.showSuccess(this, "Trả sách thành công! Tồn kho sách đã được hoàn lại.");
             }
 
             loadReturnTable();
             loadBooksTable();
             loadFinesTable();
+            loadOverviewMetrics();
         } catch (Exception ex) {
             UIUtils.showError(this, "Không thể trả sách: " + ex.getMessage());
         }
-    }
-
-    // =========================================================================
-    // TAB 4: QUẢN LÝ TIỀN PHẠT
-    // =========================================================================
-    protected JPanel createFinesTab() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        toolbar.add(new JLabel("Lọc theo trạng thái:"));
-
-        cboFineStatusFilter = new JComboBox<>(new String[]{"-- Tất cả phiếu phạt --", "Chưa thu (UNPAID)", "Đã thu (PAID)"});
-        cboFineStatusFilter.addActionListener(e -> loadFinesTable());
-        toolbar.add(cboFineStatusFilter);
-
-        JButton btnRefresh = new JButton("Làm mới");
-        btnRefresh.addActionListener(e -> loadFinesTable());
-        toolbar.add(btnRefresh);
-
-        toolbar.add(new JSeparator(JSeparator.VERTICAL));
-
-        JButton btnPayFine = new JButton("Thu tiền phạt");
-        btnPayFine.setFont(btnPayFine.getFont().deriveFont(Font.BOLD, 13f));
-        btnPayFine.setForeground(new Color(24, 90, 157));
-        btnPayFine.addActionListener(e -> executePayFine());
-        toolbar.add(btnPayFine);
-
-        panel.add(toolbar, BorderLayout.NORTH);
-
-        String[] columns = {"Mã phạt", "Mã phiếu mượn", "Mã độc giả", "Họ tên độc giả", "Số ngày trễ", "Số tiền phạt", "Lý do", "Trạng thái", "Ngày thu tiền"};
-        fineTableModel = new DefaultTableModel(columns, 0);
-        fineTable = UIUtils.createReadonlyTable(fineTableModel);
-        UIUtils.centerAlignColumns(fineTable, 0, 1, 2, 4, 7, 8);
-        UIUtils.rightAlignColumns(fineTable, 5);
-        UIUtils.setColumnWidth(fineTable, 0, 70);
-        UIUtils.setColumnWidth(fineTable, 1, 90);
-        UIUtils.setColumnWidth(fineTable, 2, 90);
-        UIUtils.setColumnWidth(fineTable, 3, 160);
-
-        panel.add(new JScrollPane(fineTable), BorderLayout.CENTER);
-        return panel;
     }
 
     public void loadFinesTable() {
@@ -1061,9 +1226,9 @@ public class LibrarianDashboardFrame extends JFrame {
             int filterIdx = cboFineStatusFilter != null ? cboFineStatusFilter.getSelectedIndex() : 0;
             List<Fine> list = fineService.getAllFines();
 
-            if (filterIdx == 1) { // UNPAID
+            if (filterIdx == 1) {
                 list = list.stream().filter(f -> f.getStatus() == FineStatus.UNPAID).toList();
-            } else if (filterIdx == 2) { // PAID
+            } else if (filterIdx == 2) {
                 list = list.stream().filter(f -> f.getStatus() == FineStatus.PAID).toList();
             }
 
@@ -1100,7 +1265,7 @@ public class LibrarianDashboardFrame extends JFrame {
     private void executePayFine() {
         int row = fineTable.getSelectedRow();
         if (row < 0) {
-            UIUtils.showWarning(this, "Vui lòng chọn một phiếu phạt cần thu tiền từ bảng.");
+            UIUtils.showWarning(this, "Vui lòng chọn một phiếu phạt cần thu tiền.");
             return;
         }
 
@@ -1114,16 +1279,44 @@ public class LibrarianDashboardFrame extends JFrame {
             return;
         }
 
-        if (!UIUtils.confirm(this, "Xác nhận thu số tiền " + amount + " từ độc giả \"" + memberName + "\" cho phiếu phạt #" + fineId + "?", "Xác nhận thu tiền phạt")) {
+        if (!UIUtils.confirm(this, "Xác nhận thu số tiền " + amount + " từ độc giả \"" + memberName + "\" (Phiếu #" + fineId + ")?", "Thu tiền phạt")) {
             return;
         }
 
         try {
             fineService.payFine(fineId);
-            UIUtils.showSuccess(this, "Thu tiền phạt thành công! Phiếu phạt #" + fineId + " đã chuyển sang trạng thái PAID.");
+            UIUtils.showSuccess(this, "Thu tiền phạt thành công!");
             loadFinesTable();
+            loadOverviewMetrics();
         } catch (Exception ex) {
-            UIUtils.showError(this, "Lỗi thanh toán phạt: " + ex.getMessage());
+            UIUtils.showError(this, "Lỗi thanh toán: " + ex.getMessage());
+        }
+    }
+
+    public void loadOverviewMetrics() {
+        if (overviewCardsPanel == null) return;
+
+        try {
+            List<Book> books = bookService.getAllBooks();
+            int totalTitles = books.size();
+            int totalCopies = books.stream().mapToInt(Book::getTotalCopies).sum();
+            int availableCopies = books.stream().mapToInt(Book::getAvailableCopies).sum();
+            int borrowedCopies = totalCopies - availableCopies;
+
+            List<Fine> unpaidFines = fineService.getUnpaidFines();
+            BigDecimal totalUnpaid = unpaidFines.stream()
+                    .map(Fine::getFineAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            overviewCardsPanel.removeAll();
+            overviewCardsPanel.add(UIUtils.createStatCard("Tổng số đầu sách", totalTitles + " đầu sách", HustTheme.PRIMARY_RED, "📕"));
+            overviewCardsPanel.add(UIUtils.createStatCard("Tổng số bản in", totalCopies + " cuốn", HustTheme.ACCENT_GOLD, "📚"));
+            overviewCardsPanel.add(UIUtils.createStatCard("Số sách đang mượn", borrowedCopies + " cuốn", new Color(217, 119, 6), "📖"));
+            overviewCardsPanel.add(UIUtils.createStatCard("Tiền phạt chưa thu", UIUtils.formatCurrency(totalUnpaid), new Color(220, 38, 38), "💰"));
+
+            overviewCardsPanel.revalidate();
+            overviewCardsPanel.repaint();
+        } catch (Exception ignored) {
         }
     }
 
@@ -1131,6 +1324,7 @@ public class LibrarianDashboardFrame extends JFrame {
         loadBooksTable();
         loadReturnTable();
         loadFinesTable();
+        loadOverviewMetrics();
     }
 
     protected void handleLogout() {
