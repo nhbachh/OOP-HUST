@@ -160,6 +160,24 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
+    public Optional<User> findByEmail(String email) {
+        String sql = SELECT_BASE + "WHERE email = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapResultSetToUser(rs, conn));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("[UserDAOImpl.findByEmail] Lỗi tìm người dùng theo email '" + email + "': " + e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    @Override
     public List<User> findByRole(Role role) {
         List<User> list = new ArrayList<>();
         String sql = SELECT_BASE + "WHERE role = ? ORDER BY user_id ASC";

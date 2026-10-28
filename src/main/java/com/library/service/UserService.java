@@ -77,9 +77,24 @@ public interface UserService {
                       Role role, String department);
 
     /**
-     * Thêm mới độc giả vào hệ thống.
+     * Thêm mới độc giả vào hệ thống (do Quản trị viên thực hiện).
      */
     Member createMember(String userCode, String fullName, String email, String phone);
+
+    /**
+     * Chức năng tự đăng ký tài khoản thẻ bạn đọc trực tuyến dành cho Độc giả.
+     *
+     * @param userCode    Mã sinh viên / Mã thẻ bạn đọc (bắt buộc, không trùng lặp)
+     * @param username    Tên đăng nhập (bắt buộc, không trùng lặp)
+     * @param rawPassword Mật khẩu chưa mã hóa (bắt buộc, tối thiểu 6 ký tự)
+     * @param fullName    Họ và tên độc giả (bắt buộc)
+     * @param email       Email liên hệ (tùy chọn)
+     * @param phone       Số điện thoại (tùy chọn)
+     * @return Đối tượng Member sau khi tạo thành công
+     * @throws com.library.exception.ValidationException nếu thông tin không hợp lệ hoặc bị trùng lặp
+     */
+    Member registerMember(String userCode, String username, String rawPassword,
+                          String fullName, String email, String phone);
 
     /**
      * Lấy toàn bộ người dùng trong hệ thống.

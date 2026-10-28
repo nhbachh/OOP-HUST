@@ -42,6 +42,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userDAO.findByUsername(username.trim())
+                .or(() -> userDAO.findByUserCode(username.trim()))
                 .orElseThrow(() -> new ValidationException("Tên đăng nhập hoặc mật khẩu không chính xác."));
 
         if (user.getStatus() == UserStatus.LOCKED) {
@@ -162,6 +163,53 @@ public class UserServiceImpl implements UserService {
         boolean success = userDAO.insert(member);
         if (!success) {
             throw new RuntimeException("Lỗi hệ thống khi thêm độc giả mới.");
+        }
+        return member;
+    }
+
+    @Override
+    public Member registerMember(String userCode, String username, String rawPassword,
+                                 String fullName, String email, String phone) {
+        if (userCode == null || userCode.trim().isEmpty()) {
+            throw new ValidationException("Mã sinh viên / mã độc giả không được để trống.");
+        }
+        if (username == null || username.trim().isEmpty()) {
+            throw new ValidationException("Tên đăng nhập không được để trống.");
+        }
+        if (rawPassword == null || rawPassword.trim().isEmpty()) {
+            throw new ValidationException("Mật khẩu không được để trống.");
+        }
+        if (rawPassword.trim().length() < 6) {
+            throw new ValidationException("Mật khẩu phải chứa ít nhất 6 ký tự để đảm bảo an toàn.");
+        }
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new ValidationException("Họ và tên không được để trống.");
+        }
+
+        String code = userCode.trim();
+        String user = username.trim();
+
+        if (userDAO.findByUserCode(code).isPresent()) {
+            throw new ValidationException("Mã bạn đọc / sinh viên '" + code + "' đã tồn tại trong hệ thống.");
+        }
+        if (userDAO.findByUsername(user).isPresent()) {
+            throw new ValidationException("Tên đăng nhập '" + user + "' đã được sử dụng. Vui lòng chọn tên khác.");
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            if (userDAO.findByEmail(email.trim()).isPresent()) {
+                throw new ValidationException("Địa chỉ email '" + email.trim() + "' đã được đăng ký cho tài khoản khác.");
+            }
+        }
+
+        String passwordHash = hashPassword(rawPassword.trim());
+        Member member = new Member(code, user, passwordHash,
+                fullName.trim(),
+                email != null && !email.trim().isEmpty() ? email.trim() : null,
+                phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
+
+        boolean success = userDAO.insert(member);
+        if (!success) {
+            throw new RuntimeException("Lỗi hệ thống khi đăng ký thẻ bạn đọc mới.");
         }
         return member;
     }

@@ -247,7 +247,30 @@ public class LoginFrame extends JFrame {
         });
 
         rightForm.add(btnLogin);
-        rightForm.add(Box.createVerticalStrut(20));
+
+        // Nút liên kết Đăng ký tài khoản Độc giả mới
+        JPanel regLinkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+        regLinkPanel.setOpaque(false);
+        JLabel lblNoAcc = new JLabel("Chưa có thẻ bạn đọc?");
+        lblNoAcc.setFont(HustTheme.FONT_SMALL);
+        lblNoAcc.setForeground(HustTheme.TEXT_MUTED);
+
+        JButton btnRegister = new JButton("<html><u>Đăng ký thẻ mới ngay</u></html>");
+        btnRegister.setFont(HustTheme.FONT_SMALL.deriveFont(Font.BOLD));
+        btnRegister.setForeground(HustTheme.PRIMARY_RED);
+        btnRegister.setBorderPainted(false);
+        btnRegister.setContentAreaFilled(false);
+        btnRegister.setFocusPainted(false);
+        btnRegister.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnRegister.addActionListener(e -> showRegisterDialog());
+
+        regLinkPanel.add(lblNoAcc);
+        regLinkPanel.add(btnRegister);
+        regLinkPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 26));
+
+        rightForm.add(Box.createVerticalStrut(10));
+        rightForm.add(regLinkPanel);
+        rightForm.add(Box.createVerticalStrut(12));
 
         // Khối chọn nhanh tài khoản mẫu (Clickable chips)
         JLabel lblQuick = new JLabel("Chọn nhanh tài khoản mẫu để thử nghiệm:");
@@ -373,5 +396,14 @@ public class LoginFrame extends JFrame {
         } catch (Exception ex) {
             UIUtils.showError(this, "Lỗi đăng nhập: " + ex.getMessage());
         }
+    }
+
+    private void showRegisterDialog() {
+        RegisterMemberDialog dialog = new RegisterMemberDialog(this, userService, (regUser, regPass) -> {
+            txtUsername.setText(regUser);
+            txtPassword.setText(regPass);
+            btnLogin.requestFocus();
+        });
+        dialog.setVisible(true);
     }
 }

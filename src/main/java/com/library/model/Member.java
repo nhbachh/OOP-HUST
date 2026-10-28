@@ -31,6 +31,16 @@ public class Member extends User {
     }
 
     /**
+     * Constructor hỗ trợ độc giả tự đăng ký tài khoản có tên đăng nhập và mật khẩu.
+     */
+    public Member(String userCode, String username, String passwordHash,
+                  String fullName, String email, String phone) {
+        super(userCode, username, passwordHash, fullName, email, phone, Role.MEMBER, UserStatus.ACTIVE);
+        this.maxBorrowLimit = DEFAULT_MAX_BORROW_LIMIT;
+        this.currentBorrowCount = 0;
+    }
+
+    /**
      * Constructor tạo độc giả với hạn mức tùy chỉnh.
      */
     public Member(String userCode, String fullName, String email, String phone,

@@ -31,6 +31,14 @@ public interface UserDAO extends CrudDAO<User, Integer> {
     Optional<User> findByUsername(String username);
 
     /**
+     * Tìm người dùng theo địa chỉ email.
+     *
+     * @param email Địa chỉ email
+     * @return Optional chứa User nếu tìm thấy
+     */
+    Optional<User> findByEmail(String email);
+
+    /**
      * Lấy danh sách người dùng theo vai trò cụ thể (ADMIN, LIBRARIAN, MEMBER).
      *
      * @param role Vai trò người dùng

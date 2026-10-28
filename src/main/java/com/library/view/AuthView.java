@@ -29,11 +29,12 @@ public class AuthView {
         while (true) {
             ConsoleUtils.printHeader("ĐĂNG NHẬP HỆ THỐNG THƯ VIỆN");
             System.out.println("  1. Đăng nhập Tài khoản Nhân viên / Quản trị viên (Username & Password)");
-            System.out.println("  2. Đăng nhập Thẻ Độc giả (Mã thẻ bạn đọc MBRxxx)");
+            System.out.println("  2. Đăng nhập Thẻ Độc giả (Mã thẻ bạn đọc MBRxxx hoặc MSSV)");
+            System.out.println("  3. Đăng ký Thẻ Độc giả mới (Tự đăng ký trực tuyến)");
             System.out.println("  0. Quay lại Menu chính");
             ConsoleUtils.printDivider();
 
-            int choice = ConsoleUtils.readInt(">> Chọn phương thức đăng nhập: ", 0, 2);
+            int choice = ConsoleUtils.readInt(">> Chọn chức năng: ", 0, 3);
 
             switch (choice) {
                 case 1 -> {
@@ -44,6 +45,7 @@ public class AuthView {
                     User member = loginMember();
                     if (member != null) return member;
                 }
+                case 3 -> registerMemberCli();
                 case 0 -> {
                     return null;
                 }
@@ -95,6 +97,42 @@ public class AuthView {
             ConsoleUtils.printError("Không tìm thấy thẻ bạn đọc với mã '" + code + "'. Vui lòng kiểm tra lại!");
             ConsoleUtils.pressEnterToContinue();
             return null;
+        }
+    }
+
+    private void registerMemberCli() {
+        ConsoleUtils.printSubHeader("ĐĂNG KÝ THẺ ĐỘC GIẢ TRỰC TUYẾN");
+        System.out.println("Vui lòng nhập các thông tin bắt buộc (*):");
+        String userCode = ConsoleUtils.readString("Nhập Mã SV / Mã thẻ bạn đọc (*): ", false);
+        String fullName = ConsoleUtils.readString("Nhập Họ và tên độc giả (*): ", false);
+        String username = ConsoleUtils.readString("Nhập Tên tài khoản (username) (*): ", false);
+        String password = ConsoleUtils.readString("Nhập Mật khẩu (tối thiểu 6 ký tự) (*): ", false);
+        String confirmPassword = ConsoleUtils.readString("Xác nhận lại Mật khẩu (*): ", false);
+
+        if (!password.equals(confirmPassword)) {
+            ConsoleUtils.printError("Mật khẩu xác nhận không khớp! Hủy bỏ quá trình đăng ký.");
+            ConsoleUtils.pressEnterToContinue();
+            return;
+        }
+
+        String email = ConsoleUtils.readString("Nhập Email liên hệ (bỏ trống nếu không có): ", true);
+        String phone = ConsoleUtils.readString("Nhập Số điện thoại (bỏ trống nếu không có): ", true);
+
+        try {
+            Member member = userService.registerMember(userCode, username, password, fullName, email, phone);
+            ConsoleUtils.printSuccess("Chúc mừng! Đăng ký Thẻ Độc giả thành công.");
+            System.out.println("  • Mã thẻ / MSSV : " + member.getUserCode());
+            System.out.println("  • Tên độc giả   : " + member.getFullName());
+            System.out.println("  • Tên đăng nhập : " + member.getUsername());
+            System.out.println("  • Hạn mức mượn  : " + member.getMaxBorrowLimit() + " cuốn sách");
+            System.out.println("\nBạn có thể đăng nhập ngay bây giờ bằng Tên đăng nhập hoặc Mã thẻ!");
+            ConsoleUtils.pressEnterToContinue();
+        } catch (ValidationException e) {
+            ConsoleUtils.printError(e.getMessage());
+            ConsoleUtils.pressEnterToContinue();
+        } catch (Exception e) {
+            ConsoleUtils.printError("Lỗi hệ thống khi đăng ký thẻ bạn đọc: " + e.getMessage());
+            ConsoleUtils.pressEnterToContinue();
         }
     }
 }
