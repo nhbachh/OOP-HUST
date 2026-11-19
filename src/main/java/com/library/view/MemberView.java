@@ -37,16 +37,18 @@ public class MemberView {
             System.out.println("  3. Xem toàn bộ lịch sử mượn / trả");
             System.out.println("  4. Tra cứu vé phạt quá hạn & Hướng dẫn nộp phạt");
             System.out.println("  5. Thông tin tài khoản & Hạn mức mượn còn lại");
+            System.out.println("  6. Đổi mật khẩu tài khoản");
             System.out.println("  0. Đăng xuất");
             ConsoleUtils.printDivider();
 
-            int choice = ConsoleUtils.readInt(">> Vui lòng chọn chức năng [0-5]: ", 0, 5);
+            int choice = ConsoleUtils.readInt(">> Vui lòng chọn chức năng [0-6]: ", 0, 6);
             switch (choice) {
                 case 1 -> searchBooks();
                 case 2 -> viewCurrentBorrowedBooks();
                 case 3 -> viewBorrowHistory();
                 case 4 -> viewFines();
                 case 5 -> viewAccountInfo();
+                case 6 -> handleChangePassword();
                 case 0 -> {
                     ConsoleUtils.printInfo("Đã đăng xuất tài khoản độc giả.");
                     running = false;
@@ -135,6 +137,32 @@ public class MemberView {
             System.out.printf("  * Hạn mức mượn tối đa: %d cuốn%n", m.getMaxBorrowLimit());
             System.out.printf("  * Số sách được mượn:   %d cuốn còn lại%n", Math.max(0, m.getMaxBorrowLimit() - m.getCurrentBorrowCount()));
             System.out.printf("  * Quyền mượn sách:     %s%n", m.canBorrow() ? "ĐỦ ĐIỀU KIỆN" : "BỊ CHẶN (Vui lòng trả sách hoặc đóng phạt)");
+        }
+        ConsoleUtils.pressEnterToContinue();
+    }
+
+    private void handleChangePassword() {
+        ConsoleUtils.printSubHeader("ĐỔI MẬT KHẨU TÀI KHOẢN ĐỘC GIẢ");
+        String oldPass = ConsoleUtils.readString("Nhập mật khẩu hiện tại: ", false);
+        String newPass = ConsoleUtils.readString("Nhập mật khẩu mới (tối thiểu 6 ký tự): ", false);
+        if (newPass.length() < 6) {
+            ConsoleUtils.printError("Mật khẩu mới phải có tối thiểu 6 ký tự.");
+            ConsoleUtils.pressEnterToContinue();
+            return;
+        }
+        String confirmPass = ConsoleUtils.readString("Xác nhận lại mật khẩu mới: ", false);
+        if (!newPass.equals(confirmPass)) {
+            ConsoleUtils.printError("Mật khẩu mới và mật khẩu xác nhận không trùng khớp!");
+            ConsoleUtils.pressEnterToContinue();
+            return;
+        }
+        try {
+            boolean ok = userService.changePassword(currentMember.getUserId(), oldPass, newPass);
+            if (ok) {
+                ConsoleUtils.printSuccess("Đổi mật khẩu thành công! Vui lòng ghi nhớ mật khẩu mới của bạn.");
+            }
+        } catch (Exception e) {
+            ConsoleUtils.printError("Lỗi đổi mật khẩu: " + e.getMessage());
         }
         ConsoleUtils.pressEnterToContinue();
     }

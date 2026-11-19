@@ -74,6 +74,12 @@ public class MemberDashboardFrame extends JFrame {
     private JTable fineTable;
     private JLabel lblFineSummary;
 
+    // Components Tab Profile
+    private JLabel lblProfileFullName;
+    private JLabel lblProfileEmail;
+    private JLabel lblProfilePhone;
+    private JLabel lblSidebarMemberName;
+
     public MemberDashboardFrame(Member member,
                                 BookService bookService,
                                 CategoryService categoryService,
@@ -105,6 +111,7 @@ public class MemberDashboardFrame extends JFrame {
 
     private void initComponents() {
         setTitle("HUST Lib — Cổng Thông Tin Bạn Đọc (" + member.getUserCode() + " - " + member.getFullName() + ")");
+        setIconImage(UIUtils.createLogoIcon());
         setSize(1140, 750);
         setMinimumSize(new Dimension(980, 620));
         setLocationRelativeTo(null);
@@ -201,15 +208,15 @@ public class MemberDashboardFrame extends JFrame {
         JPanel profileText = new JPanel(new GridLayout(2, 1, 2, 2));
         profileText.setOpaque(false);
 
-        JLabel lblName = new JLabel(member.getFullName());
-        lblName.setFont(HustTheme.FONT_BODY_BOLD);
-        lblName.setForeground(Color.WHITE);
+        lblSidebarMemberName = new JLabel(member.getFullName());
+        lblSidebarMemberName.setFont(HustTheme.FONT_BODY_BOLD);
+        lblSidebarMemberName.setForeground(Color.WHITE);
 
         JLabel lblRoleBadge = new JLabel("BẠN ĐỌC • " + member.getUserCode());
         lblRoleBadge.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
         lblRoleBadge.setForeground(new Color(167, 243, 208)); // Emerald green tint
 
-        profileText.add(lblName);
+        profileText.add(lblSidebarMemberName);
         profileText.add(lblRoleBadge);
 
         profileChip.add(lblAvatar, BorderLayout.WEST);
@@ -570,15 +577,55 @@ public class MemberDashboardFrame extends JFrame {
         int row = 1;
 
         addInfoRow(card, gbc, row++, "Mã độc giả / MSSV:", member.getUserCode());
-        addInfoRow(card, gbc, row++, "Họ và tên:", member.getFullName());
-        addInfoRow(card, gbc, row++, "Email:", member.getEmail() != null ? member.getEmail() : "Chưa cập nhật");
-        addInfoRow(card, gbc, row++, "Số điện thoại:", member.getPhone() != null ? member.getPhone() : "Chưa cập nhật");
+
+        lblProfileFullName = new JLabel(member.getFullName());
+        lblProfileFullName.setFont(HustTheme.FONT_BODY);
+        addCustomInfoRow(card, gbc, row++, "Họ và tên:", lblProfileFullName);
+
+        lblProfileEmail = new JLabel(member.getEmail() != null ? member.getEmail() : "Chưa cập nhật");
+        lblProfileEmail.setFont(HustTheme.FONT_BODY);
+        addCustomInfoRow(card, gbc, row++, "Email:", lblProfileEmail);
+
+        lblProfilePhone = new JLabel(member.getPhone() != null ? member.getPhone() : "Chưa cập nhật");
+        lblProfilePhone.setFont(HustTheme.FONT_BODY);
+        addCustomInfoRow(card, gbc, row++, "Số điện thoại:", lblProfilePhone);
+
         addInfoRow(card, gbc, row++, "Hạn mức mượn tối đa:", member.getMaxBorrowLimit() + " cuốn sách");
         addInfoRow(card, gbc, row++, "Số sách đang mượn:", member.getCurrentBorrowCount() + " cuốn");
         addInfoRow(card, gbc, row++, "Trạng thái thẻ:", member.getStatus().name() + " (" + (member.getStatus() == UserStatus.ACTIVE ? "Đang hoạt động" : "Bị khóa") + ")");
 
+        // Nút hành động Cập nhật hồ sơ & Đổi mật khẩu
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 14, 0));
+        actionPanel.setOpaque(false);
+        JButton btnEditProfile = UIUtils.createPrimaryButton("✏️ Cập nhật thông tin");
+        btnEditProfile.addActionListener(e -> showEditProfileDialog());
+        JButton btnChangePass = UIUtils.createSecondaryButton("🔒 Đổi mật khẩu");
+        btnChangePass.addActionListener(e -> showChangePasswordDialog());
+        actionPanel.add(btnEditProfile);
+        actionPanel.add(btnChangePass);
+
+        gbc.gridy = row++;
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        card.add(Box.createVerticalStrut(10), gbc);
+        gbc.gridy = row;
+        card.add(actionPanel, gbc);
+
         wrapper.add(card);
         return wrapper;
+    }
+
+    private void addCustomInfoRow(JPanel panel, GridBagConstraints gbc, int row, String label, JLabel val) {
+        gbc.gridy = row;
+        gbc.gridx = 0;
+        gbc.weightx = 0.35;
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(HustTheme.FONT_BODY_BOLD);
+        panel.add(lbl, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 0.65;
+        panel.add(val, gbc);
     }
 
     private void addInfoRow(JPanel panel, GridBagConstraints gbc, int row, String label, String value) {
@@ -749,6 +796,138 @@ public class MemberDashboardFrame extends JFrame {
         } catch (Exception e) {
             UIUtils.showError(this, "Không thể tải danh sách tiền phạt: " + e.getMessage());
         }
+    }
+
+    private void showEditProfileDialog() {
+        JDialog dialog = new JDialog(this, "Cập nhật Thông tin Hồ sơ", true);
+        dialog.setSize(440, 320);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel form = new JPanel(new GridLayout(4, 2, 10, 14));
+        form.setBorder(new EmptyBorder(25, 25, 15, 25));
+
+        JTextField txtName = new JTextField(member.getFullName());
+        JTextField txtEmail = new JTextField(member.getEmail() != null ? member.getEmail() : "");
+        JTextField txtPhone = new JTextField(member.getPhone() != null ? member.getPhone() : "");
+
+        form.add(new JLabel("Mã độc giả:"));
+        form.add(new JLabel(member.getUserCode() + " (Cố định)"));
+        form.add(new JLabel("Họ và tên: *"));
+        form.add(txtName);
+        form.add(new JLabel("Email liên hệ:"));
+        form.add(txtEmail);
+        form.add(new JLabel("Số điện thoại:"));
+        form.add(txtPhone);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        JButton btnSave = UIUtils.createPrimaryButton("Lưu thay đổi");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy");
+
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnSave.addActionListener(e -> {
+            String newName = txtName.getText().trim();
+            String newEmail = txtEmail.getText().trim();
+            String newPhone = txtPhone.getText().trim();
+
+            if (newName.isEmpty()) {
+                UIUtils.showWarning(dialog, "Họ và tên không được để trống.");
+                return;
+            }
+
+            try {
+                boolean ok = userService.updateProfile(member.getUserId(), newName, newEmail, newPhone);
+                if (ok) {
+                    member.setFullName(newName);
+                    member.setEmail(newEmail.isEmpty() ? null : newEmail);
+                    member.setPhone(newPhone.isEmpty() ? null : newPhone);
+
+                    if (lblProfileFullName != null) lblProfileFullName.setText(newName);
+                    if (lblProfileEmail != null) lblProfileEmail.setText(newEmail.isEmpty() ? "Chưa cập nhật" : newEmail);
+                    if (lblProfilePhone != null) lblProfilePhone.setText(newPhone.isEmpty() ? "Chưa cập nhật" : newPhone);
+                    if (lblSidebarMemberName != null) lblSidebarMemberName.setText(newName);
+                    setTitle("HUST Lib — Cổng Thông Tin Bạn Đọc (" + member.getUserCode() + " - " + newName + ")");
+
+                    UIUtils.showSuccess(this, "Cập nhật hồ sơ thành công!");
+                    dialog.dispose();
+                } else {
+                    UIUtils.showError(dialog, "Không thể cập nhật hồ sơ.");
+                }
+            } catch (Exception ex) {
+                UIUtils.showError(dialog, ex.getMessage());
+            }
+        });
+
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    private void showChangePasswordDialog() {
+        JDialog dialog = new JDialog(this, "Đổi Mật Khẩu Thẻ Bạn Đọc", true);
+        dialog.setSize(440, 290);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel form = new JPanel(new GridLayout(3, 2, 10, 14));
+        form.setBorder(new EmptyBorder(25, 25, 15, 25));
+
+        JPasswordField txtOldPass = new JPasswordField();
+        JPasswordField txtNewPass = new JPasswordField();
+        JPasswordField txtConfirmPass = new JPasswordField();
+
+        form.add(new JLabel("Mật khẩu hiện tại: *"));
+        form.add(txtOldPass);
+        form.add(new JLabel("Mật khẩu mới (>= 6 ký tự): *"));
+        form.add(txtNewPass);
+        form.add(new JLabel("Nhập lại mật khẩu mới: *"));
+        form.add(txtConfirmPass);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        JButton btnSave = UIUtils.createPrimaryButton("Cập nhật mật khẩu");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy");
+
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnSave.addActionListener(e -> {
+            String oldP = new String(txtOldPass.getPassword()).trim();
+            String newP = new String(txtNewPass.getPassword()).trim();
+            String confirmP = new String(txtConfirmPass.getPassword()).trim();
+
+            if (oldP.isEmpty()) {
+                UIUtils.showWarning(dialog, "Vui lòng nhập mật khẩu hiện tại.");
+                return;
+            }
+            if (newP.length() < 6) {
+                UIUtils.showWarning(dialog, "Mật khẩu mới phải có tối thiểu 6 ký tự.");
+                return;
+            }
+            if (!newP.equals(confirmP)) {
+                UIUtils.showWarning(dialog, "Mật khẩu mới và mật khẩu xác nhận không trùng khớp.");
+                return;
+            }
+
+            try {
+                boolean ok = userService.changePassword(member.getUserId(), oldP, newP);
+                if (ok) {
+                    UIUtils.showSuccess(this, "Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
+                    dialog.dispose();
+                } else {
+                    UIUtils.showError(dialog, "Không thể cập nhật mật khẩu.");
+                }
+            } catch (Exception ex) {
+                UIUtils.showError(dialog, ex.getMessage());
+            }
+        });
+
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
     }
 
     private void handleLogout() {

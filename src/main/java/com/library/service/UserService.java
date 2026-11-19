@@ -102,4 +102,27 @@ public interface UserService {
      * @return Danh sách User
      */
     List<User> getAllUsers();
+
+    /**
+     * Thay đổi mật khẩu người dùng.
+     *
+     * @param userId      Mã người dùng
+     * @param oldPassword Mật khẩu hiện tại
+     * @param newPassword Mật khẩu mới (tối thiểu 6 ký tự)
+     * @return true nếu thay đổi mật khẩu thành công
+     * @throws com.library.exception.ValidationException nếu mật khẩu cũ không đúng hoặc mật khẩu mới không hợp lệ
+     */
+    boolean changePassword(int userId, String oldPassword, String newPassword);
+
+    /**
+     * Cập nhật thông tin hồ sơ người dùng (họ tên, email, số điện thoại).
+     *
+     * @param userId   Mã người dùng
+     * @param fullName Họ và tên mới
+     * @param email    Email mới (không trùng lặp)
+     * @param phone    Số điện thoại mới
+     * @return true nếu cập nhật thành công
+     * @throws com.library.exception.ValidationException nếu thông tin không hợp lệ hoặc email trùng lặp
+     */
+    boolean updateProfile(int userId, String fullName, String email, String phone);
 }

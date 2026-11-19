@@ -113,6 +113,7 @@ public class LibrarianDashboardFrame extends JFrame {
 
     protected void initComponents() {
         setTitle(getFrameTitle());
+        setIconImage(UIUtils.createLogoIcon());
         setSize(1140, 750);
         setMinimumSize(new Dimension(980, 620));
         setLocationRelativeTo(null);
@@ -344,6 +345,19 @@ public class LibrarianDashboardFrame extends JFrame {
         lblDate.setFont(HustTheme.FONT_SMALL);
         lblDate.setForeground(HustTheme.TEXT_MUTED);
 
+        JButton btnChangePass = new JButton("🔒 Đổi mật khẩu");
+        btnChangePass.setFont(HustTheme.FONT_SMALL);
+        btnChangePass.setForeground(HustTheme.PRIMARY_RED);
+        btnChangePass.setBackground(new Color(254, 242, 242));
+        btnChangePass.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(254, 202, 202), 1, true),
+                new EmptyBorder(4, 10, 4, 10)
+        ));
+        btnChangePass.setFocusPainted(false);
+        btnChangePass.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnChangePass.addActionListener(e -> showChangePasswordDialog());
+
+        rightBar.add(btnChangePass);
         rightBar.add(lblDate);
         topBar.add(rightBar, BorderLayout.EAST);
 
@@ -1325,6 +1339,70 @@ public class LibrarianDashboardFrame extends JFrame {
         loadReturnTable();
         loadFinesTable();
         loadOverviewMetrics();
+    }
+
+    protected void showChangePasswordDialog() {
+        JDialog dialog = new JDialog(this, "Đổi Mật Khẩu Tài Khoản Nhân Sự", true);
+        dialog.setSize(440, 290);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel form = new JPanel(new GridLayout(3, 2, 10, 14));
+        form.setBorder(new EmptyBorder(25, 25, 15, 25));
+
+        JPasswordField txtOldPass = new JPasswordField();
+        JPasswordField txtNewPass = new JPasswordField();
+        JPasswordField txtConfirmPass = new JPasswordField();
+
+        form.add(new JLabel("Mật khẩu hiện tại: *"));
+        form.add(txtOldPass);
+        form.add(new JLabel("Mật khẩu mới (>= 6 ký tự): *"));
+        form.add(txtNewPass);
+        form.add(new JLabel("Nhập lại mật khẩu mới: *"));
+        form.add(txtConfirmPass);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 12));
+        JButton btnSave = UIUtils.createPrimaryButton("Cập nhật mật khẩu");
+        JButton btnCancel = UIUtils.createSecondaryButton("Hủy");
+
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnSave.addActionListener(e -> {
+            String oldP = new String(txtOldPass.getPassword()).trim();
+            String newP = new String(txtNewPass.getPassword()).trim();
+            String confirmP = new String(txtConfirmPass.getPassword()).trim();
+
+            if (oldP.isEmpty()) {
+                UIUtils.showWarning(dialog, "Vui lòng nhập mật khẩu hiện tại.");
+                return;
+            }
+            if (newP.length() < 6) {
+                UIUtils.showWarning(dialog, "Mật khẩu mới phải có tối thiểu 6 ký tự.");
+                return;
+            }
+            if (!newP.equals(confirmP)) {
+                UIUtils.showWarning(dialog, "Mật khẩu mới và mật khẩu xác nhận không trùng khớp.");
+                return;
+            }
+
+            try {
+                boolean ok = userService.changePassword(staff.getUserId(), oldP, newP);
+                if (ok) {
+                    UIUtils.showSuccess(this, "Đổi mật khẩu thành công! Hãy ghi nhớ mật khẩu mới của bạn.");
+                    dialog.dispose();
+                } else {
+                    UIUtils.showError(dialog, "Không thể cập nhật mật khẩu.");
+                }
+            } catch (Exception ex) {
+                UIUtils.showError(dialog, ex.getMessage());
+            }
+        });
+
+        btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
+
+        dialog.add(form, BorderLayout.CENTER);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
     }
 
     protected void handleLogout() {

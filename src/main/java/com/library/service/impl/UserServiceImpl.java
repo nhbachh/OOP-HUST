@@ -214,6 +214,53 @@ public class UserServiceImpl implements UserService {
         return member;
     }
 
+    @Override
+    public boolean changePassword(int userId, String oldPassword, String newPassword) {
+        User user = getUserById(userId);
+        if (oldPassword == null || oldPassword.trim().isEmpty()) {
+            throw new ValidationException("Mật khẩu hiện tại không được để trống.");
+        }
+        if (newPassword == null || newPassword.trim().length() < 6) {
+            throw new ValidationException("Mật khẩu mới phải có độ dài tối thiểu 6 ký tự.");
+        }
+
+        String storedHash = user.getPasswordHash();
+        String oldHashed = hashPassword(oldPassword.trim());
+
+        if (storedHash != null && !storedHash.isEmpty()) {
+            if (!storedHash.equalsIgnoreCase(oldHashed) && !storedHash.equals(oldPassword.trim())) {
+                throw new ValidationException("Mật khẩu hiện tại không chính xác.");
+            }
+        }
+
+        user.setPasswordHash(hashPassword(newPassword.trim()));
+        return userDAO.update(user);
+    }
+
+    @Override
+    public boolean updateProfile(int userId, String fullName, String email, String phone) {
+        User user = getUserById(userId);
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new ValidationException("Họ và tên không được để trống.");
+        }
+        if (email != null && !email.trim().isEmpty()) {
+            String trimmedEmail = email.trim();
+            userDAO.findByEmail(trimmedEmail).ifPresent(existing -> {
+                if (existing.getUserId() != userId) {
+                    throw new ValidationException("Địa chỉ email '" + trimmedEmail + "' đã được sử dụng bởi người dùng khác.");
+                }
+            });
+            user.setEmail(trimmedEmail);
+        } else {
+            user.setEmail(null);
+        }
+
+        user.setFullName(fullName.trim());
+        user.setPhone(phone != null && !phone.trim().isEmpty() ? phone.trim() : null);
+
+        return userDAO.update(user);
+    }
+
     /**
      * Tiện ích băm mật khẩu theo chuẩn SHA-256.
      */

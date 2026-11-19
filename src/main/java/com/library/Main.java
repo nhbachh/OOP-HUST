@@ -58,6 +58,15 @@ public class Main {
 
         SwingUtilities.invokeLater(() -> {
             try {
+                if (!com.library.config.DatabaseConfig.isConnectionValid()) {
+                    JOptionPane.showMessageDialog(null,
+                            "<html><b>Không thể kết nối đến máy chủ CSDL MySQL (library_db)!</b><br><br>" +
+                            "Vui lòng đảm bảo dịch vụ MySQL đang chạy (VD: <code>brew services start mysql</code> hoặc qua XAMPP).<br>" +
+                            "URL: <i>" + com.library.config.DatabaseConfig.getUrl() + "</i><br><br>" +
+                            "Hệ thống vẫn sẽ khởi động nhưng cần kết nối MySQL để thực hiện đăng nhập và giao dịch.</html>",
+                            "Cảnh Báo Kết Nối CSDL",
+                            JOptionPane.WARNING_MESSAGE);
+                }
                 LoginFrame loginFrame = new LoginFrame();
                 loginFrame.setVisible(true);
             } catch (Exception e) {
@@ -76,6 +85,10 @@ public class Main {
     public void runCli() {
         boolean running = true;
         printWelcomeBanner();
+
+        if (!com.library.config.DatabaseConfig.isConnectionValid()) {
+            ConsoleUtils.printError("CẢNH BÁO: Chưa kết nối được MySQL (library_db). Vui lòng kiểm tra dịch vụ MySQL đang chạy!");
+        }
 
         while (running) {
             try {

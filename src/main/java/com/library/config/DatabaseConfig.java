@@ -54,6 +54,19 @@ public final class DatabaseConfig {
     }
 
     /**
+     * Kiểm tra nhanh trạng thái sẵn sàng kết nối đến CSDL MySQL.
+     *
+     * @return true nếu kết nối thành công và CSDL hoạt động bình thường
+     */
+    public static boolean isConnectionValid() {
+        try (Connection conn = getConnection()) {
+            return conn != null && !conn.isClosed();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Phương thức tiện ích kiểm tra kết nối CSDL và in thông tin trạng thái ra console.
      */
     public static void testConnection() {

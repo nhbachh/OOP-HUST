@@ -1,8 +1,9 @@
-# HỆ THỐNG QUẢN LÝ THƯ VIỆN — LIBRARY MANAGEMENT SYSTEM
+# HỆ THỐNG QUẢN LÝ THƯ VIỆN — LIBRARY MANAGEMENT SYSTEM (HUST LIB)
 
 > **Học phần:** Lập trình Hướng đối tượng (OOP)  
-> **Công nghệ:** Java 17 · JDBC · MySQL 8+ · Apache Maven 3.x  
-> **Kiến trúc CSDL:** Single Table Inheritance (bảng `users` làm đỉnh kế thừa)
+> **Công nghệ:** Java 17+ · JDBC · MySQL 8+ · Apache Maven 3.x · FlatLaf Look and Feel  
+> **Kiến trúc CSDL:** Single Table Inheritance (bảng `users` làm đỉnh kế thừa)  
+> **Phiên bản:** 1.0.0 (Production Release — Sẵn sàng cho người dùng)
 
 ---
 
@@ -137,26 +138,38 @@ Mỗi bảng có lớp triển khai cụ thể:
 
 ```
 LibraryManagementSystem/                        ← Thư mục gốc dự án
-├── pom.xml                                     ← Cấu hình Maven (Java 17, mysql-connector-j 8.3.0)
-├── README.md                                   ← Tài liệu thiết kế kiến trúc (file này)
+├── pom.xml                                     ← Cấu hình Maven (Java 17, MySQL Connector, FlatLaf, JUnit 5, Shade Plugin)
+├── README.md                                   ← Tài liệu thiết kế kiến trúc và hướng dẫn sử dụng
+├── run.sh                                      ← Script tiện ích khởi chạy trên macOS / Linux (ưu tiên chạy Fat JAR)
+├── run.bat                                     ← Script tiện ích khởi chạy trên Windows
 │
 ├── sql/                                        ← Script cơ sở dữ liệu MySQL
-│   ├── schema.sql                              ← Tạo library_db và 5 bảng (STI design)
-│   └── seed.sql                                ← Dữ liệu mẫu tiếng Việt
+│   ├── schema.sql                              ← Tạo database library_db và 5 bảng (STI design, constraints)
+│   └── seed.sql                                ← Dữ liệu mẫu tiếng Việt chuẩn bị sẵn
 │
-├── reports/                                    ← Báo cáo tiến độ từng Milestone
-│   └── milestone_1_report.md
+├── reports/                                    ← Báo cáo tiến độ hoàn thiện từng Milestone
+│   ├── milestone_1_report.md                   ← Milestone 1: Khởi tạo cấu trúc & CSDL
+│   ├── milestone_2_report.md                   ← Milestone 2: Config & Model OOP
+│   ├── milestone_3_report.md                   ← Milestone 3: DAO Layer (CRUD & STI Mapping)
+│   ├── milestone_4_report.md                   ← Milestone 4: Service Layer & ACID Transactions
+│   ├── milestone_5_report.md                   ← Milestone 5: Modern Swing FlatLaf GUI
+│   └── milestone_6_report.md                   ← Milestone 6: Hoàn thiện ứng dụng & Sẵn sàng cho người dùng
 │
 └── src/
-    └── main/
-        └── java/
-            └── com/library/
-                ├── config/                     ← DatabaseConnection (Singleton pattern)
-                ├── model/                      ← User(abstract), Member, Staff, Book, Category,
-                │                               │  BorrowRecord, Fine, Role(enum), Status(enum)
-                ├── dao/                        ← CrudDAO<T,ID> interface + *DAOImpl classes
-                ├── service/                    ← *Service classes (Business Logic + Transaction)
-                └── view/                       ← MainMenu, BookMenu, BorrowMenu (CLI)
+    ├── main/java/com/library/                  ← 100% Mã nguồn sản phẩm (Production Code)
+    │   ├── Main.java                           ← Điểm khởi chạy chính (hỗ trợ cả GUI và CLI --cli)
+    │   ├── config/                             ← Quản lý kết nối CSDL (Utility DatabaseConfig)
+    │   ├── model/                              ← User(abstract), Member, Staff, Book, Category, BorrowRecord, Fine
+    │   ├── dao/ & dao/impl/                    ← Generic CrudDAO & JDBC implementations
+    │   ├── service/ & service/impl/            ← Tầng dịch vụ nghiệp vụ (Transactions ACID, Auth, Profile)
+    │   ├── exception/                          ← Hệ thống ngoại lệ tùy biến (LibraryException hierarchy)
+    │   └── view/                               ← Giao diện GUI (HUST FlatLaf) và Console CLI
+    │
+    └── test/java/com/library/                  ← 100% Mã nguồn kiểm thử (Test Code tách biệt)
+        ├── LibrarySystemTest.java              ← Test Suite tự động JUnit 5 Jupiter
+        ├── Milestone2Test.java                 ← Runner kiểm thử nội bộ Model & Config
+        ├── Milestone3Test.java                 ← Runner kiểm thử tầng DAO trên CSDL thật
+        └── Milestone4Test.java                 ← Runner kiểm thử tầng Service & JDBC Transactions
 ```
 
 ---
@@ -301,16 +314,54 @@ erDiagram
 
 ---
 
-## 5. Hướng Dẫn Khởi Chạy Dự Án
+## 5. Hướng Dẫn Cài Đặt & Khởi Chạy Ứng Dụng
 
+### 5.1. Khởi tạo Cơ sở dữ liệu MySQL
+Đảm bảo dịch vụ MySQL đang chạy (VD: `brew services start mysql` hoặc qua XAMPP), sau đó thực thi 2 file script:
 ```bash
-# 1. Khởi tạo CSDL
 mysql -u root -p < sql/schema.sql
 mysql -u root -p < sql/seed.sql
-
-# 2. Kiểm tra biên dịch
-mvn clean compile
-
-# 3. Chạy ứng dụng (Milestone tiếp theo)
-mvn exec:java -Dexec.mainClass="com.library.Main"
 ```
+
+### 5.2. Chạy Kiểm thử Đơn vị Tự động (JUnit 5)
+```bash
+mvn clean test
+```
+
+### 5.3. Đóng gói Ứng dụng thành Executable Fat JAR
+```bash
+mvn package
+```
+Kết quả tạo ra file JAR độc lập `target/LibraryManagementSystem-1.0.0.jar` (đã kèm đầy đủ giao diện FlatLaf, driver MySQL và cấu hình Manifest).
+
+### 5.4. Khởi chạy Ứng dụng
+
+#### Cách 1: Khởi chạy nhanh bằng Script (Khuyên dùng)
+- **Trên macOS / Linux:**
+  ```bash
+  ./run.sh          # Khởi chạy Giao diện Đồ họa Hiện đại (Swing FlatLaf GUI)
+  ./run.sh --cli    # Khởi chạy Giao diện Dòng lệnh (Console CLI)
+  ```
+- **Trên Windows:**
+  ```cmd
+  run.bat           REM Khởi chạy Giao diện Đồ họa GUI
+  run.bat --cli     REM Khởi chạy Giao diện Console CLI
+  ```
+
+#### Cách 2: Khởi chạy trực tiếp từ File JAR
+```bash
+java -jar target/LibraryManagementSystem-1.0.0.jar         # Chế độ GUI
+java -jar target/LibraryManagementSystem-1.0.0.jar --cli   # Chế độ CLI
+```
+
+---
+
+## 6. Phân Quyền Người Dùng & Tài Khoản Mẫu Trải Nghiệm
+
+| Vai trò | Tên đăng nhập / Mã thẻ | Mật khẩu mẫu | Chức năng chính |
+| :--- | :--- | :--- | :--- |
+| **Quản trị viên (Admin)** | `admin` | `Admin@123` | Quản trị toàn hệ thống, cấp mới tài khoản nhân sự, khóa/mở thẻ người dùng, xem báo cáo thống kê KPI, đổi mật khẩu. |
+| **Thủ thư (Librarian)** | `thuthu_mai` | `Lib@2025` | Quản lý kho sách, lập phiếu mượn (ACID), nhận trả sách, tự động tính phạt quá hạn, thu tiền phạt, đổi mật khẩu. |
+| **Độc giả (Member)** | `MBR001` | *(Tùy chọn)* | Tra cứu sách, theo dõi phiếu mượn & hạn trả, lịch sử mượn, kiểm tra nợ phạt, đổi mật khẩu, cập nhật hồ sơ cá nhân. |
+
+> **Lưu ý:** Bạn đọc mới có thể tự tạo tài khoản thẻ bạn đọc trực tuyến ngay tại màn hình Đăng nhập bằng cách nhấn **"Đăng ký thẻ mới ngay"**.

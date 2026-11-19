@@ -255,6 +255,33 @@ public final class UIUtils {
     }
 
     /**
+     * Tạo biểu tượng logo nhận diện HUST Lib dùng làm icon cửa sổ ứng dụng.
+     */
+    public static Image createLogoIcon() {
+        int size = 64;
+        java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = img.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Nền đỏ Bách Khoa bo góc
+        g2.setColor(HustTheme.PRIMARY_RED);
+        g2.fillRoundRect(0, 0, size, size, 16, 16);
+
+        // Bánh răng vàng
+        g2.setColor(HustTheme.ACCENT_GOLD);
+        g2.setStroke(new BasicStroke(2.5f));
+        g2.drawOval(size / 2 - 12, size / 2 - 12, 24, 24);
+
+        // Cuốn sách mở trắng
+        g2.setColor(Color.WHITE);
+        g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        g2.drawRoundRect(size / 2 - 16, size / 2 - 10, 32, 20, 6, 6);
+
+        g2.dispose();
+        return img;
+    }
+
+    /**
      * Renderer tùy biến vẽ Huy hiệu viên thuốc (Status Pill) bo tròn mềm mại cho JTable.
      */
     public static class StatusPillRenderer extends DefaultTableCellRenderer {

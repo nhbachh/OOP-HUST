@@ -51,6 +51,7 @@ public class LoginFrame extends JFrame {
 
     private void initComponents() {
         setTitle("HUST Lib — Đăng nhập Hệ thống Thư viện ĐH Bách Khoa Hà Nội");
+        setIconImage(UIUtils.createLogoIcon());
         setSize(820, 520);
         setResizable(false);
         setLocationRelativeTo(null);
@@ -182,8 +183,9 @@ public class LoginFrame extends JFrame {
         lblUser.setFont(HustTheme.FONT_BODY_BOLD);
         lblUser.setForeground(HustTheme.TEXT_PRIMARY);
         txtUsername = new JTextField();
-        txtUsername.putClientProperty("JTextField.placeholderText", "admin, thuthu_mai hoặc MBR001");
+        txtUsername.putClientProperty("JTextField.placeholderText", "Nhập tên đăng nhập hoặc mã thẻ / MSSV...");
         txtUsername.setMaximumSize(new Dimension(Short.MAX_VALUE, 38));
+        txtUsername.addActionListener(e -> txtPassword.requestFocus());
 
         rightForm.add(lblUser);
         rightForm.add(Box.createVerticalStrut(5));
@@ -195,8 +197,9 @@ public class LoginFrame extends JFrame {
         lblPass.setFont(HustTheme.FONT_BODY_BOLD);
         lblPass.setForeground(HustTheme.TEXT_PRIMARY);
         txtPassword = new JPasswordField();
-        txtPassword.putClientProperty("JTextField.placeholderText", "Nhập mật khẩu tài khoản");
+        txtPassword.putClientProperty("JTextField.placeholderText", "Nhập mật khẩu tài khoản...");
         txtPassword.setMaximumSize(new Dimension(Short.MAX_VALUE, 38));
+        txtPassword.addActionListener(e -> executeLogin());
 
         rightForm.add(lblPass);
         rightForm.add(Box.createVerticalStrut(5));
@@ -272,26 +275,31 @@ public class LoginFrame extends JFrame {
         rightForm.add(regLinkPanel);
         rightForm.add(Box.createVerticalStrut(12));
 
-        // Khối chọn nhanh tài khoản mẫu (Clickable chips)
-        JLabel lblQuick = new JLabel("Chọn nhanh tài khoản mẫu để thử nghiệm:");
-        lblQuick.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        lblQuick.setForeground(HustTheme.TEXT_MUTED);
-        rightForm.add(lblQuick);
+        // Trợ giúp đăng nhập & Phân quyền
+        JPanel helpPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
+        helpPanel.setOpaque(false);
+
+        JButton btnHelp = new JButton("💡 Hướng dẫn đăng nhập & Phân quyền");
+        btnHelp.setFont(HustTheme.FONT_SMALL);
+        btnHelp.setForeground(HustTheme.TEXT_MUTED);
+        btnHelp.setBorderPainted(false);
+        btnHelp.setContentAreaFilled(false);
+        btnHelp.setFocusPainted(false);
+        btnHelp.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnHelp.addActionListener(e -> showLoginHelpDialog());
+
+        helpPanel.add(btnHelp);
+        helpPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 26));
+
         rightForm.add(Box.createVerticalStrut(8));
+        rightForm.add(helpPanel);
+        rightForm.add(Box.createVerticalGlue());
 
-        JPanel chipPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        chipPanel.setOpaque(false);
-
-        JButton chipAdmin = createRoleChip("Admin", "admin", "Admin@123");
-        JButton chipLib = createRoleChip("Thủ thư", "thuthu_mai", "Lib@2025");
-        JButton chipMem = createRoleChip("Độc giả", "MBR001", "");
-
-        chipPanel.add(chipAdmin);
-        chipPanel.add(chipLib);
-        chipPanel.add(chipMem);
-        chipPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 32));
-
-        rightForm.add(chipPanel);
+        JLabel lblFooter = new JLabel("Hệ thống Quản lý Thư viện • ĐH Bách Khoa Hà Nội");
+        lblFooter.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+        lblFooter.setForeground(new Color(156, 163, 175));
+        lblFooter.setAlignmentX(Component.CENTER_ALIGNMENT);
+        rightForm.add(lblFooter);
 
         container.add(leftBanner);
         container.add(rightForm);
@@ -302,7 +310,66 @@ public class LoginFrame extends JFrame {
         getRootPane().setDefaultButton(btnLogin);
     }
 
-    private JButton createRoleChip(String label, String username, String password) {
+    private void showLoginHelpDialog() {
+        JDialog dialog = new JDialog(this, "HUST Lib — Hướng dẫn Đăng nhập & Tài khoản", true);
+        dialog.setSize(520, 390);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(new EmptyBorder(20, 24, 20, 24));
+        content.setBackground(Color.WHITE);
+
+        JLabel lblTitle = new JLabel("HƯỚNG DẪN ĐĂNG NHẬP & PHÂN QUYỀN");
+        lblTitle.setFont(HustTheme.FONT_BODY_BOLD);
+        lblTitle.setForeground(HustTheme.PRIMARY_RED);
+        lblTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(lblTitle);
+        content.add(Box.createVerticalStrut(12));
+
+        JLabel lblRoles = new JLabel("""
+            <html>
+            <body style='font-family: sans-serif; font-size: 11px; line-height: 1.5;'>
+            <b>1. Quản trị viên (Admin):</b> Quản trị toàn hệ thống, cấp tài khoản nhân sự và theo dõi báo cáo KPI tổng quan.<br><br>
+            <b>2. Thủ thư (Librarian):</b> Quản lý kho sách, xử lý mượn/trả sách (giao dịch ACID), kiểm tra quá hạn và thu nợ phạt.<br><br>
+            <b>3. Bạn đọc / Sinh viên (Member):</b> Tra cứu danh mục sách, theo dõi phiếu mượn cá nhân, hạn trả và quản lý tài khoản. Sinh viên mới có thể nhấn <i>'Đăng ký thẻ mới ngay'</i> để tạo tài khoản trực tuyến.<br><br>
+            <hr color='#E4E4E7'>
+            <b>Tài khoản mẫu dùng thử hệ thống:</b><br>
+            • Admin: <code>admin</code> / <code>Admin@123</code><br>
+            • Thủ thư: <code>thuthu_mai</code> / <code>Lib@2025</code><br>
+            • Độc giả: <code>MBR001</code>
+            </body></html>
+        """);
+        lblRoles.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(lblRoles);
+        content.add(Box.createVerticalStrut(14));
+
+        JPanel quickPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        quickPanel.setOpaque(false);
+        quickPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JButton chipAdmin = createRoleChip("Điền Admin", "admin", "Admin@123", dialog);
+        JButton chipLib = createRoleChip("Điền Thủ thư", "thuthu_mai", "Lib@2025", dialog);
+        JButton chipMem = createRoleChip("Điền Độc giả", "MBR001", "", dialog);
+
+        quickPanel.add(chipAdmin);
+        quickPanel.add(chipLib);
+        quickPanel.add(chipMem);
+        content.add(quickPanel);
+
+        dialog.add(content, BorderLayout.CENTER);
+
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        JButton btnClose = UIUtils.createSecondaryButton("Đóng");
+        btnClose.addActionListener(e -> dialog.dispose());
+        btnPanel.add(btnClose);
+        dialog.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
+    }
+
+    private JButton createRoleChip(String label, String username, String password, JDialog dialog) {
         JButton btn = new JButton(label);
         btn.setFont(HustTheme.FONT_SMALL);
         btn.setForeground(HustTheme.PRIMARY_RED);
@@ -317,6 +384,7 @@ public class LoginFrame extends JFrame {
         btn.addActionListener(e -> {
             txtUsername.setText(username);
             txtPassword.setText(password);
+            if (dialog != null) dialog.dispose();
             txtPassword.requestFocus();
         });
 

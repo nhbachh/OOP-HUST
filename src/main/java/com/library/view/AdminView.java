@@ -35,10 +35,11 @@ public class AdminView extends LibrarianView {
             System.out.println("  5. Quản lý vé phạt & Thu tiền phạt");
             System.out.println("  6. Quản trị Tài khoản người dùng (Xem danh sách, Thêm NV, Khóa/Mở thẻ)");
             System.out.println("  7. Báo cáo thống kê toàn diện hệ thống thư viện");
+            System.out.println("  8. Đổi mật khẩu tài khoản");
             System.out.println("  0. Đăng xuất");
             ConsoleUtils.printDivider();
 
-            int choice = ConsoleUtils.readInt(">> Chọn chức năng quản trị [0-7]: ", 0, 7);
+            int choice = ConsoleUtils.readInt(">> Chọn chức năng quản trị [0-8]: ", 0, 8);
             switch (choice) {
                 case 1 -> manageBooks();
                 case 2 -> manageCategories();
@@ -47,6 +48,7 @@ public class AdminView extends LibrarianView {
                 case 5 -> manageFines();
                 case 6 -> manageUserAccounts();
                 case 7 -> viewSystemStatistics();
+                case 8 -> handleChangePassword();
                 case 0 -> {
                     ConsoleUtils.printInfo("Đã đăng xuất tài khoản quản trị viên.");
                     running = false;
