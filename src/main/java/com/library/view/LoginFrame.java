@@ -52,7 +52,7 @@ public class LoginFrame extends JFrame {
     private void initComponents() {
         setTitle("HUST Lib — Đăng nhập Hệ thống Thư viện ĐH Bách Khoa Hà Nội");
         setIconImage(UIUtils.createLogoIcon());
-        setSize(820, 520);
+        setSize(860, 525);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -163,28 +163,33 @@ public class LoginFrame extends JFrame {
         JPanel rightForm = new JPanel();
         rightForm.setLayout(new BoxLayout(rightForm, BoxLayout.Y_AXIS));
         rightForm.setBackground(Color.WHITE);
-        rightForm.setBorder(new EmptyBorder(35, 40, 30, 40));
+        rightForm.setBorder(new EmptyBorder(35, 40, 25, 40));
 
         JLabel lblHeader = new JLabel("Đăng Nhập Hệ Thống");
         lblHeader.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
         lblHeader.setForeground(HustTheme.TEXT_PRIMARY);
+        lblHeader.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblDesc = new JLabel("Chào mừng Giảng viên, Sinh viên & Bạn đọc Bách Khoa");
         lblDesc.setFont(HustTheme.FONT_SMALL);
         lblDesc.setForeground(HustTheme.TEXT_MUTED);
+        lblDesc.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         rightForm.add(lblHeader);
         rightForm.add(Box.createVerticalStrut(4));
         rightForm.add(lblDesc);
-        rightForm.add(Box.createVerticalStrut(22));
+        rightForm.add(Box.createVerticalStrut(20));
 
         // Trường Username
-        JLabel lblUser = new JLabel("Tên đăng nhập hoặc Mã sinh viên / độc giả:");
+        JLabel lblUser = new JLabel("Tên đăng nhập hoặc Mã thẻ / MSSV:");
         lblUser.setFont(HustTheme.FONT_BODY_BOLD);
         lblUser.setForeground(HustTheme.TEXT_PRIMARY);
+        lblUser.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         txtUsername = new JTextField();
         txtUsername.putClientProperty("JTextField.placeholderText", "Nhập tên đăng nhập hoặc mã thẻ / MSSV...");
         txtUsername.setMaximumSize(new Dimension(Short.MAX_VALUE, 38));
+        txtUsername.setAlignmentX(Component.LEFT_ALIGNMENT);
         txtUsername.addActionListener(e -> txtPassword.requestFocus());
 
         rightForm.add(lblUser);
@@ -196,9 +201,12 @@ public class LoginFrame extends JFrame {
         JLabel lblPass = new JLabel("Mật khẩu:");
         lblPass.setFont(HustTheme.FONT_BODY_BOLD);
         lblPass.setForeground(HustTheme.TEXT_PRIMARY);
+        lblPass.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         txtPassword = new JPasswordField();
         txtPassword.putClientProperty("JTextField.placeholderText", "Nhập mật khẩu tài khoản...");
         txtPassword.setMaximumSize(new Dimension(Short.MAX_VALUE, 38));
+        txtPassword.setAlignmentX(Component.LEFT_ALIGNMENT);
         txtPassword.addActionListener(e -> executeLogin());
 
         rightForm.add(lblPass);
@@ -222,9 +230,10 @@ public class LoginFrame extends JFrame {
         });
         optionPanel.add(chkShowPassword, BorderLayout.WEST);
         optionPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 26));
+        optionPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         rightForm.add(optionPanel);
-        rightForm.add(Box.createVerticalStrut(18));
+        rightForm.add(Box.createVerticalStrut(16));
 
         // Nút Đăng nhập Đỏ Bách Khoa
         btnLogin = new JButton("Đăng nhập");
@@ -270,10 +279,11 @@ public class LoginFrame extends JFrame {
         regLinkPanel.add(lblNoAcc);
         regLinkPanel.add(btnRegister);
         regLinkPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 26));
+        regLinkPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         rightForm.add(Box.createVerticalStrut(10));
         rightForm.add(regLinkPanel);
-        rightForm.add(Box.createVerticalStrut(12));
+        rightForm.add(Box.createVerticalStrut(10));
 
         // Trợ giúp đăng nhập & Phân quyền
         JPanel helpPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 0));
@@ -290,16 +300,23 @@ public class LoginFrame extends JFrame {
 
         helpPanel.add(btnHelp);
         helpPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 26));
+        helpPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        rightForm.add(Box.createVerticalStrut(8));
         rightForm.add(helpPanel);
         rightForm.add(Box.createVerticalGlue());
+
+        // Footer thông tin bản quyền & hệ thống
+        JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        footerPanel.setOpaque(false);
+        footerPanel.setMaximumSize(new Dimension(Short.MAX_VALUE, 22));
+        footerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel lblFooter = new JLabel("Hệ thống Quản lý Thư viện • ĐH Bách Khoa Hà Nội");
         lblFooter.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         lblFooter.setForeground(new Color(156, 163, 175));
-        lblFooter.setAlignmentX(Component.CENTER_ALIGNMENT);
-        rightForm.add(lblFooter);
+        footerPanel.add(lblFooter);
+
+        rightForm.add(footerPanel);
 
         container.add(leftBanner);
         container.add(rightForm);
