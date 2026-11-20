@@ -132,16 +132,22 @@ public class LoginFrame extends JFrame {
         JLabel lblBrand = new JLabel("HUST Lib");
         lblBrand.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
         lblBrand.setForeground(Color.WHITE);
+        lblBrand.setHorizontalAlignment(SwingConstants.CENTER);
+        lblBrand.setMaximumSize(new Dimension(Short.MAX_VALUE, 40));
         lblBrand.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JLabel lblSub = new JLabel("Thư Viện ĐH Bách Khoa Hà Nội");
         lblSub.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         lblSub.setForeground(new Color(254, 243, 199));
+        lblSub.setHorizontalAlignment(SwingConstants.CENTER);
+        lblSub.setMaximumSize(new Dimension(Short.MAX_VALUE, 24));
         lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel lblTag = new JLabel("<html><center>Hệ thống Quản lý Mượn Trả & Tra cứu Sách</center></html>");
+        JLabel lblTag = new JLabel("Hệ thống Quản lý Mượn Trả & Tra cứu Sách");
         lblTag.setFont(HustTheme.FONT_SMALL);
         lblTag.setForeground(new Color(255, 255, 255, 190));
+        lblTag.setHorizontalAlignment(SwingConstants.CENTER);
+        lblTag.setMaximumSize(new Dimension(Short.MAX_VALUE, 20));
         lblTag.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         leftBanner.add(lblBrand);
@@ -154,6 +160,8 @@ public class LoginFrame extends JFrame {
         JLabel lblVer = new JLabel("Phiên bản 2.0 • HUST Red Edition");
         lblVer.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         lblVer.setForeground(new Color(255, 255, 255, 140));
+        lblVer.setHorizontalAlignment(SwingConstants.CENTER);
+        lblVer.setMaximumSize(new Dimension(Short.MAX_VALUE, 20));
         lblVer.setAlignmentX(Component.CENTER_ALIGNMENT);
         leftBanner.add(lblVer);
 
