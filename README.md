@@ -1,9 +1,9 @@
 # HỆ THỐNG QUẢN LÝ THƯ VIỆN — LIBRARY MANAGEMENT SYSTEM (HUST LIB)
 
 > **Học phần:** Lập trình Hướng đối tượng (OOP)  
-> **Công nghệ:** Java 17+ · JDBC · MySQL 8+ · Apache Maven 3.x · FlatLaf Look and Feel  
+> **Công nghệ:** Java 17+ · JavaFX 21 · JDBC · MySQL 8+ · Apache Maven 3.x · FlatLaf Swing (Legacy Fallback)  
 > **Kiến trúc CSDL:** Single Table Inheritance (bảng `users` làm đỉnh kế thừa)  
-> **Phiên bản:** 1.0.0 (Production Release — Sẵn sàng cho người dùng)
+> **Phiên bản:** 2.0.0 (Version 2 JavaFX Release — Hiện đại, Không mất chữ, Sẵn sàng cho người dùng)
 
 ---
 
@@ -336,23 +336,23 @@ Kết quả tạo ra file JAR độc lập `target/LibraryManagementSystem-1.0.0
 
 ### 5.4. Khởi chạy Ứng dụng
 
-#### Cách 1: Khởi chạy nhanh bằng Script (Khuyên dùng)
+#### Cách 1: Khởi chạy Giao diện JavaFX Version 2 Hiện đại (Mặc định)
 - **Trên macOS / Linux:**
   ```bash
-  ./run.sh          # Khởi chạy Giao diện Đồ họa Hiện đại (Swing FlatLaf GUI)
-  ./run.sh --cli    # Khởi chạy Giao diện Dòng lệnh (Console CLI)
+  ./run.sh                  # Mặc định khởi chạy JavaFX v2
+  ./run.sh --demo           # Chạy JavaFX với thanh điều hướng Demo đa màn hình
+  ./run.sh --swing          # Chạy Giao diện Swing cũ (Legacy v1)
+  ./run.sh --cli            # Khởi chạy Giao diện Dòng lệnh (Console CLI)
+  ```
+- **Hoặc chạy trực tiếp script JavaFX:**
+  ```bash
+  ./run-javafx-demo.sh
   ```
 - **Trên Windows:**
   ```cmd
-  run.bat           REM Khởi chạy Giao diện Đồ họa GUI
-  run.bat --cli     REM Khởi chạy Giao diện Console CLI
+  run.bat                   REM Khởi chạy Giao diện Đồ họa GUI
+  run.bat --cli             REM Khởi chạy Giao diện Console CLI
   ```
-
-#### Cách 2: Khởi chạy trực tiếp từ File JAR
-```bash
-java -jar target/LibraryManagementSystem-1.0.0.jar         # Chế độ GUI
-java -jar target/LibraryManagementSystem-1.0.0.jar --cli   # Chế độ CLI
-```
 
 ---
 

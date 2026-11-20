@@ -11,8 +11,8 @@ import java.util.List;
 
 /**
  * Điểm khởi chạy chính của ứng dụng Quản lý Thư viện (Library Management System).
- * Tích hợp giao diện đồ họa hiện đại FlatLaf (Swing GUI) theo mặc định,
- * đồng thời hỗ trợ chuyển sang giao diện dòng lệnh khi truyền tham số '--cli'.
+ * Tích hợp giao diện đồ họa JavaFX v2 hiện đại theo mặc định,
+ * đồng thời hỗ trợ chuyển sang giao diện Swing cũ ('--swing') hoặc dòng lệnh ('--cli').
  * Áp dụng kiến trúc phân tầng: Model -> DAO -> Service -> View.
  */
 public class Main {
@@ -34,15 +34,26 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // Kiểm tra xem người dùng có yêu cầu chạy chế độ dòng lệnh Console CLI hay không
+        // 1. Chế độ dòng lệnh Console CLI
         if (args.length > 0 && ("--cli".equalsIgnoreCase(args[0]) || "-c".equalsIgnoreCase(args[0]))) {
             Main app = new Main();
             app.runCli();
             return;
         }
 
-        // Mặc định khởi chạy Giao diện Đồ họa Hiện đại (Swing GUI với FlatLaf)
-        launchGui();
+        // 2. Chế độ Giao diện Swing cũ (Legacy GUI v1 với FlatLaf)
+        if (args.length > 0 && ("--swing".equalsIgnoreCase(args[0]) || "-s".equalsIgnoreCase(args[0]))) {
+            launchGui();
+            return;
+        }
+
+        // 3. Mặc định khởi chạy Giao diện Đồ họa JavaFX Version 2 Hiện đại
+        try {
+            com.library.javafx.JavaFxLauncher.main(args);
+        } catch (Throwable t) {
+            System.err.println("Không thể khởi động JavaFX runtime (" + t.getMessage() + "). Tự động chuyển sang Swing GUI fallback...");
+            launchGui();
+        }
     }
 
     /**

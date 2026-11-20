@@ -37,6 +37,18 @@
             <version>${flatlaf.version}</version>
         </dependency>
 
+        <!-- JavaFX Controls & FXML for Modern UI v2 -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>21.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>21.0.2</version>
+        </dependency>
+
         <!-- JUnit 5 Jupiter for Automated Testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
