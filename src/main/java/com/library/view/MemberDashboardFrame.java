@@ -310,7 +310,7 @@ public class MemberDashboardFrame extends JFrame {
         topBar.setBackground(Color.WHITE);
         topBar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, HustTheme.BORDER_COLOR),
-                new EmptyBorder(10, 20, 10, 20)
+                new EmptyBorder(10, 20, 10, 25)
         ));
 
         lblBreadcrumb = new JLabel("Trang chủ / Khám Phá & Tra Cứu Sách");
@@ -332,7 +332,7 @@ public class MemberDashboardFrame extends JFrame {
 
         // Ngày hiện tại
         LocalDate now = LocalDate.now();
-        String dateStr = "📅 " + now.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new java.util.Locale("vi", "VN")));
+        String dateStr = "📅 " + now.format(DateTimeFormatter.ofPattern("EEEE, dd/MM/yyyy", new java.util.Locale("vi", "VN"))) + "   ";
         JLabel lblDate = new JLabel(dateStr);
         lblDate.setFont(HustTheme.FONT_SMALL);
         lblDate.setForeground(HustTheme.TEXT_MUTED);
@@ -364,7 +364,7 @@ public class MemberDashboardFrame extends JFrame {
         // Top: 3 Thẻ chỉ số cá nhân (Quota KPI Cards)
         quotaCardsPanel = new JPanel(new GridLayout(1, 3, 14, 0));
         quotaCardsPanel.setOpaque(false);
-        quotaCardsPanel.setPreferredSize(new Dimension(0, 85));
+        quotaCardsPanel.setPreferredSize(new Dimension(0, 108));
         updateQuotaCards();
         panel.add(quotaCardsPanel, BorderLayout.NORTH);
 
@@ -417,10 +417,12 @@ public class MemberDashboardFrame extends JFrame {
         UIUtils.setStatusPillRenderer(bookTable, 7);
 
         UIUtils.setColumnWidth(bookTable, 0, 50);
-        UIUtils.setColumnWidth(bookTable, 1, 120);
-        UIUtils.setColumnWidth(bookTable, 2, 280);
-        UIUtils.setColumnWidth(bookTable, 3, 160);
+        UIUtils.setColumnWidth(bookTable, 1, 115);
+        UIUtils.setColumnWidth(bookTable, 2, 260);
+        UIUtils.setColumnWidth(bookTable, 3, 150);
         UIUtils.setColumnWidth(bookTable, 4, 130);
+        UIUtils.setColumnWidth(bookTable, 5, 80);
+        UIUtils.setColumnWidth(bookTable, 6, 140);
         UIUtils.setColumnWidth(bookTable, 7, 110);
 
         JScrollPane scrollPane = new JScrollPane(bookTable);
@@ -472,15 +474,19 @@ public class MemberDashboardFrame extends JFrame {
                 "Theo dõi thời hạn trả để tránh phát sinh phí phạt quá hạn (2.000 VNĐ / ngày trễ)");
         panel.add(header, BorderLayout.NORTH);
 
-        String[] cols = {"Mã phiếu", "Mã sách", "Tên sách", "Ngày mượn", "Hạn trả", "Trạng thái", "Hạn trả thực tế"};
+        String[] cols = {"Mã phiếu", "Mã sách", "Tên sách", "Ngày mượn", "Hạn trả", "Trạng thái", "Thời hạn"};
         currentBorrowTableModel = new DefaultTableModel(cols, 0);
         currentBorrowTable = UIUtils.createReadonlyTable(currentBorrowTableModel);
         UIUtils.centerAlignColumns(currentBorrowTable, 0, 1, 3, 4, 6);
         UIUtils.setStatusPillRenderer(currentBorrowTable, 5);
 
         UIUtils.setColumnWidth(currentBorrowTable, 0, 80);
-        UIUtils.setColumnWidth(currentBorrowTable, 1, 70);
-        UIUtils.setColumnWidth(currentBorrowTable, 2, 280);
+        UIUtils.setColumnWidth(currentBorrowTable, 1, 75);
+        UIUtils.setColumnWidth(currentBorrowTable, 2, 260);
+        UIUtils.setColumnWidth(currentBorrowTable, 3, 110);
+        UIUtils.setColumnWidth(currentBorrowTable, 4, 110);
+        UIUtils.setColumnWidth(currentBorrowTable, 5, 110);
+        UIUtils.setColumnWidth(currentBorrowTable, 6, 120);
 
         JScrollPane sp = new JScrollPane(currentBorrowTable);
         sp.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));
@@ -506,8 +512,12 @@ public class MemberDashboardFrame extends JFrame {
         UIUtils.setStatusPillRenderer(historyTable, 6);
 
         UIUtils.setColumnWidth(historyTable, 0, 80);
-        UIUtils.setColumnWidth(historyTable, 1, 70);
-        UIUtils.setColumnWidth(historyTable, 2, 280);
+        UIUtils.setColumnWidth(historyTable, 1, 75);
+        UIUtils.setColumnWidth(historyTable, 2, 250);
+        UIUtils.setColumnWidth(historyTable, 3, 110);
+        UIUtils.setColumnWidth(historyTable, 4, 110);
+        UIUtils.setColumnWidth(historyTable, 5, 130);
+        UIUtils.setColumnWidth(historyTable, 6, 110);
 
         JScrollPane sp = new JScrollPane(historyTable);
         sp.setBorder(BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1));

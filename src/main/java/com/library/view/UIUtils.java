@@ -166,10 +166,10 @@ public final class UIUtils {
      * Tạo Card thống kê chỉ số KPI hiện đại có viền màu Bách Khoa nổi bật.
      */
     public static JPanel createStatCard(String title, String value, Color accentColor, String iconText) {
-        JPanel card = new JPanel(new BorderLayout(12, 10));
+        JPanel card = new JPanel(new BorderLayout(8, 6));
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(HustTheme.BORDER_COLOR, 1, true),
-                new EmptyBorder(14, 18, 14, 18)
+                new EmptyBorder(12, 16, 12, 16)
         ));
         card.setBackground(Color.WHITE);
 
