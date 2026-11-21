@@ -85,7 +85,7 @@ public class JavaFxApp extends Application {
             showLoginView();
         }
 
-        Scene scene = new Scene(mainContainer, 1140, 720);
+        Scene scene = new Scene(mainContainer, 1040, 660);
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(960);
         primaryStage.setMinHeight(600);
@@ -132,6 +132,12 @@ public class JavaFxApp extends Application {
      */
     private void onLoginSuccess(User user) {
         if (user == null) return;
+
+        if (primaryStage != null && (primaryStage.getWidth() < 1140 || primaryStage.getHeight() < 720)) {
+            primaryStage.setWidth(1140);
+            primaryStage.setHeight(720);
+            primaryStage.centerOnScreen();
+        }
 
         if (user.getRole() == Role.ADMIN) {
             showAdminDashboard((Staff) user);
@@ -282,7 +288,13 @@ public class JavaFxApp extends Application {
         String outDir = "/Users/apple/.gemini/antigravity/brain/0a25110d-66fc-4e21-9e8b-df80e15ccbd6";
         new Thread(() -> {
             try {
-                captureSingleView(new LoginView(primaryStage, userService, this::onLoginSuccess), outDir + "/javafx_login.png");
+                LoginView lv = new LoginView(primaryStage, userService, this::onLoginSuccess);
+                captureSingleView(lv, outDir + "/javafx_login.png");
+
+                // Bật xem mật khẩu để chụp ảnh minh họa
+                Platform.runLater(() -> lv.getBtnTogglePassword().fire());
+                Thread.sleep(120);
+                captureSingleView(lv, outDir + "/javafx_login_show_password.png");
 
                 Member mockMember = new Member("SV20201234", "member", "hash", "Nguyễn Văn An", "an.nv@hust.edu.vn", "0987654321");
                 mockMember.setUserId(1);
