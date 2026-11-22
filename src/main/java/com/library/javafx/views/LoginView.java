@@ -45,14 +45,14 @@ public class LoginView extends HBox {
         setPadding(Insets.EMPTY);
 
         // 1. Khởi tạo các trường nhập liệu
-        this.txtUsername = new TextField("member");
+        this.txtUsername = new TextField("admin");
         this.txtUsername.setPromptText("Nhập tên đăng nhập hoặc MSSV...");
         this.txtUsername.setStyle(JavaFxTheme.CSS_INPUT);
 
         // Trường mật khẩu ẩn (dấu chấm tròn)
         String pwdStyle = JavaFxTheme.CSS_INPUT + " -fx-padding: 8 38 8 12;";
         this.txtPassword = new PasswordField();
-        this.txtPassword.setText("mem123");
+        this.txtPassword.setText("Admin@123");
         this.txtPassword.setPromptText("Nhập mật khẩu...");
         this.txtPassword.setStyle(pwdStyle);
 
@@ -165,32 +165,32 @@ public class LoginView extends HBox {
         sampleBox.setPadding(new Insets(12, 14, 12, 14));
         sampleBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.28); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.12); -fx-border-radius: 10;");
 
-        Label lblSampleTitle = new Label("TÀI KHOẢN MẪU (CLICK ĐỂ ĐIỀN):");
+        Label lblSampleTitle = new Label("TÀI KHOẢN MẪU KIỂM THỬ (CLICK ĐỂ ĐIỀN):");
         lblSampleTitle.setFont(Font.font("System", FontWeight.BOLD, 9));
         lblSampleTitle.setStyle("-fx-text-fill: rgba(255, 255, 255, 0.7);");
 
-        Hyperlink accAdmin = new Hyperlink("• Quản trị: admin / admin123");
+        Hyperlink accAdmin = new Hyperlink("• Quản trị : admin / Admin@123");
         accAdmin.setFont(Font.font("Monospaced", 11));
         accAdmin.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
         accAdmin.setOnAction(e -> {
             txtUsername.setText("admin");
-            txtPassword.setText("admin123");
+            txtPassword.setText("Admin@123");
         });
 
-        Hyperlink accLib = new Hyperlink("• Thủ thư: librarian / lib123");
+        Hyperlink accLib = new Hyperlink("• Thủ thư  : thuthu_mai / Lib@2025");
         accLib.setFont(Font.font("Monospaced", 11));
         accLib.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
         accLib.setOnAction(e -> {
-            txtUsername.setText("librarian");
-            txtPassword.setText("lib123");
+            txtUsername.setText("thuthu_mai");
+            txtPassword.setText("Lib@2025");
         });
 
-        Hyperlink accMem = new Hyperlink("• Độc giả: member / mem123");
+        Hyperlink accMem = new Hyperlink("• Độc giả  : MBR001 (Thẻ bạn đọc)");
         accMem.setFont(Font.font("Monospaced", 11));
         accMem.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
         accMem.setOnAction(e -> {
-            txtUsername.setText("member");
-            txtPassword.setText("mem123");
+            txtUsername.setText("MBR001");
+            txtPassword.setText("");
         });
 
         sampleBox.getChildren().addAll(lblSampleTitle, accAdmin, accLib, accMem);
@@ -238,8 +238,12 @@ public class LoginView extends HBox {
         Runnable handleLogin = () -> {
             String u = txtUsername.getText().trim();
             String p = txtPassword.getText();
-            if (u.isEmpty() || p.isEmpty()) {
-                JavaFxTheme.showError("Lỗi đăng nhập", "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu!");
+            if (u.isEmpty()) {
+                JavaFxTheme.showError("Lỗi đăng nhập", "Vui lòng nhập tên đăng nhập hoặc mã thẻ bạn đọc!");
+                return;
+            }
+            if (p.isEmpty() && !u.toUpperCase().startsWith("MBR") && !"member".equalsIgnoreCase(u)) {
+                JavaFxTheme.showError("Lỗi đăng nhập", "Vui lòng nhập mật khẩu cho tài khoản cán bộ / thủ thư!");
                 return;
             }
             try {

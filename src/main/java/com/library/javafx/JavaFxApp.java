@@ -246,25 +246,52 @@ public class JavaFxApp extends Application {
     }
 
     private void showDemoMember() {
-        Member mockMember = new Member("SV20201234", "member", "hash", "Nguyễn Văn An", "an.nv@hust.edu.vn", "0987654321");
-        mockMember.setUserId(1);
-        MemberDashboardView mv = new MemberDashboardView(mockMember, bookService, categoryService, borrowService, fineService, userService, this::showDemoLogin);
+        Member activeMember = null;
+        if (userService != null) {
+            try {
+                User u = userService.getUserByCode("MBR001");
+                if (u instanceof Member m) activeMember = m;
+            } catch (Exception ignored) {}
+        }
+        if (activeMember == null) {
+            activeMember = new Member("MBR001", "member", "hash", "Phạm Minh Tuấn", "tuan.pm@student.edu.vn", "0901234567");
+            activeMember.setUserId(3);
+        }
+        MemberDashboardView mv = new MemberDashboardView(activeMember, bookService, categoryService, borrowService, fineService, userService, this::showDemoLogin);
         mainContainer.setCenter(mv);
         updateNavState(btnNavMember);
     }
 
     private void showDemoLibrarian() {
-        Staff mockLib = new Staff("LIB001", "librarian", "hash", "Trần Thị Thu Thư", "librarian@hust.edu.vn", "0912345678", Role.LIBRARIAN, "Ban Thủ Thư");
-        mockLib.setUserId(2);
-        LibrarianDashboardView lv = new LibrarianDashboardView(mockLib, bookService, categoryService, borrowService, fineService, userService, this::showDemoLogin);
+        Staff activeLib = null;
+        if (userService != null) {
+            try {
+                User u = userService.getUserByCode("LIB001");
+                if (u instanceof Staff s) activeLib = s;
+            } catch (Exception ignored) {}
+        }
+        if (activeLib == null) {
+            activeLib = new Staff("LIB001", "thuthu_mai", "hash", "Trần Tuyết Mai", "mai.tt@library.edu.vn", "0988000002", Role.LIBRARIAN, "Ban Thủ Thư");
+            activeLib.setUserId(2);
+        }
+        LibrarianDashboardView lv = new LibrarianDashboardView(activeLib, bookService, categoryService, borrowService, fineService, userService, this::showDemoLogin);
         mainContainer.setCenter(lv);
         updateNavState(btnNavLibrarian);
     }
 
     private void showDemoAdmin() {
-        Staff mockAdmin = new Staff("ADM001", "admin", "hash", "Nguyễn Quản Trị", "admin@hust.edu.vn", "0901234567", Role.ADMIN, "Trung tâm CNTT");
-        mockAdmin.setUserId(3);
-        AdminDashboardView av = new AdminDashboardView(mockAdmin, userService, bookService, borrowService, fineService, this::showDemoLogin);
+        Staff activeAdmin = null;
+        if (userService != null) {
+            try {
+                User u = userService.getUserByCode("ADM001");
+                if (u instanceof Staff s) activeAdmin = s;
+            } catch (Exception ignored) {}
+        }
+        if (activeAdmin == null) {
+            activeAdmin = new Staff("ADM001", "admin", "hash", "Nguyễn Quản Trị", "admin@library.edu.vn", "0988000001", Role.ADMIN, "Trung tâm CNTT");
+            activeAdmin.setUserId(1);
+        }
+        AdminDashboardView av = new AdminDashboardView(activeAdmin, userService, bookService, borrowService, fineService, this::showDemoLogin);
         mainContainer.setCenter(av);
         updateNavState(btnNavAdmin);
     }
@@ -296,17 +323,35 @@ public class JavaFxApp extends Application {
                 Thread.sleep(120);
                 captureSingleView(lv, outDir + "/javafx_login_show_password.png");
 
-                Member mockMember = new Member("SV20201234", "member", "hash", "Nguyễn Văn An", "an.nv@hust.edu.vn", "0987654321");
-                mockMember.setUserId(1);
-                captureSingleView(new MemberDashboardView(mockMember, bookService, categoryService, borrowService, fineService, userService, null), outDir + "/javafx_member.png");
+                Member realMember = null;
+                Staff realLib = null;
+                Staff realAdmin = null;
+                if (userService != null) {
+                    try {
+                        User u1 = userService.getUserByCode("MBR001");
+                        if (u1 instanceof Member m) realMember = m;
+                        User u2 = userService.getUserByCode("LIB001");
+                        if (u2 instanceof Staff s) realLib = s;
+                        User u3 = userService.getUserByCode("ADM001");
+                        if (u3 instanceof Staff a) realAdmin = a;
+                    } catch (Exception ignored) {}
+                }
+                if (realMember == null) {
+                    realMember = new Member("MBR001", "member", "hash", "Phạm Minh Tuấn", "tuan.pm@student.edu.vn", "0901234567");
+                    realMember.setUserId(3);
+                }
+                if (realLib == null) {
+                    realLib = new Staff("LIB001", "thuthu_mai", "hash", "Trần Tuyết Mai", "mai.tt@library.edu.vn", "0988000002", Role.LIBRARIAN, "Ban Thủ Thư");
+                    realLib.setUserId(2);
+                }
+                if (realAdmin == null) {
+                    realAdmin = new Staff("ADM001", "admin", "hash", "Nguyễn Quản Trị", "admin@library.edu.vn", "0988000001", Role.ADMIN, "Trung tâm CNTT");
+                    realAdmin.setUserId(1);
+                }
 
-                Staff mockLib = new Staff("LIB001", "librarian", "hash", "Trần Thị Thu Thư", "librarian@hust.edu.vn", "0912345678", Role.LIBRARIAN, "Ban Thủ Thư");
-                mockLib.setUserId(2);
-                captureSingleView(new LibrarianDashboardView(mockLib, bookService, categoryService, borrowService, fineService, userService, null), outDir + "/javafx_librarian.png");
-
-                Staff mockAdmin = new Staff("ADM001", "admin", "hash", "Nguyễn Quản Trị", "admin@hust.edu.vn", "0901234567", Role.ADMIN, "Trung tâm CNTT");
-                mockAdmin.setUserId(3);
-                captureSingleView(new AdminDashboardView(mockAdmin, userService, bookService, borrowService, fineService, null), outDir + "/javafx_admin.png");
+                captureSingleView(new MemberDashboardView(realMember, bookService, categoryService, borrowService, fineService, userService, null), outDir + "/javafx_member.png");
+                captureSingleView(new LibrarianDashboardView(realLib, bookService, categoryService, borrowService, fineService, userService, null), outDir + "/javafx_librarian.png");
+                captureSingleView(new AdminDashboardView(realAdmin, userService, bookService, borrowService, fineService, null), outDir + "/javafx_admin.png");
 
                 System.out.println("Tất cả 4 ảnh chụp JavaFX đã được cập nhật thành công vào artifact directory!");
 

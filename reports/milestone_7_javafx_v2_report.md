@@ -115,10 +115,10 @@ flowchart TD
 
 ## 5. Tài Khoản Thử Nghiệm
 
-Hệ thống cung cấp sẵn các tài khoản mẫu tương ứng với 3 vai trò:
+Hệ thống hỗ trợ cả tài khoản thực từ cơ sở dữ liệu (`sql/seed.sql`) và các định danh kiểm thử nhanh (aliases):
 
-| Vai trò | Tên đăng nhập | Mật khẩu | Mã người dùng | Giao diện tương ứng |
-| :--- | :--- | :--- | :--- | :--- |
-| **Quản trị viên (Admin)** | `admin` | `admin123` | `ADM001` | `AdminDashboardView` |
-| **Thủ thư (Librarian)** | `librarian` | `lib123` | `LIB001` | `LibrarianDashboardView` |
-| **Độc giả (Member)** | `member` | `mem123` | `SV20201234` | `MemberDashboardView` |
+| Vai trò | Tên đăng nhập chuẩn | Mật khẩu chuẩn | Tên đăng nhập / Mật khẩu thay thế (Alias) | Mã người dùng | Giao diện tương ứng |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Quản trị viên (Admin)** | `admin` | `Admin@123` | `admin` / `admin123` | `ADM001` | `AdminDashboardView` |
+| **Thủ thư (Librarian)** | `thuthu_mai` | `Lib@2025` | `librarian` / `lib123` | `LIB001` | `LibrarianDashboardView` |
+| **Độc giả (Member)** | `MBR001` | *(Không cần mật khẩu - Thẻ bạn đọc)* | `member` / `mem123` | `MBR001` | `MemberDashboardView` |
