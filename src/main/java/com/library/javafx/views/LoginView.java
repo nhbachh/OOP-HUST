@@ -163,41 +163,11 @@ public class LoginView extends HBox {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        // Hộp hướng dẫn tài khoản mẫu (Click để điền nhanh)
-        VBox sampleBox = new VBox(6);
-        sampleBox.setPadding(new Insets(12, 14, 12, 14));
-        sampleBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.28); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.12); -fx-border-radius: 10;");
+        Label lblFooter = new Label("Phiên bản 2.0 • Thư viện Tạ Quang Bửu\n© 2026 Đại học Bách Khoa Hà Nội");
+        lblFooter.setFont(Font.font("System", 11));
+        lblFooter.setStyle("-fx-text-fill: rgba(255, 255, 255, 0.65); -fx-line-spacing: 3px;");
 
-        Label lblSampleTitle = new Label("GỢI Ý ĐĂNG NHẬP NHANH (HỆ THỐNG):");
-        lblSampleTitle.setFont(Font.font("System", FontWeight.BOLD, 9));
-        lblSampleTitle.setStyle("-fx-text-fill: rgba(255, 255, 255, 0.7);");
-
-        Hyperlink accAdmin = new Hyperlink("• Quản trị : admin / Admin@123");
-        accAdmin.setFont(Font.font("Monospaced", 11));
-        accAdmin.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
-        accAdmin.setOnAction(e -> {
-            txtUsername.setText("admin");
-            txtPassword.setText("Admin@123");
-        });
-
-        Hyperlink accLib = new Hyperlink("• Thủ thư  : thuthu_mai / Lib@2025");
-        accLib.setFont(Font.font("Monospaced", 11));
-        accLib.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
-        accLib.setOnAction(e -> {
-            txtUsername.setText("thuthu_mai");
-            txtPassword.setText("Lib@2025");
-        });
-
-        Hyperlink accMem = new Hyperlink("• Độc giả  : MBR001 (Thẻ bạn đọc)");
-        accMem.setFont(Font.font("Monospaced", 11));
-        accMem.setStyle("-fx-text-fill: #F8FAFC; -fx-padding: 2 0 2 0;");
-        accMem.setOnAction(e -> {
-            txtUsername.setText("MBR001");
-            txtPassword.setText("");
-        });
-
-        sampleBox.getChildren().addAll(lblSampleTitle, accAdmin, accLib, accMem);
-        leftBanner.getChildren().addAll(lblLogo, lblBrand, lblSub, lblDesc, spacer, sampleBox);
+        leftBanner.getChildren().addAll(lblLogo, lblBrand, lblSub, lblDesc, spacer, lblFooter);
 
         // =====================================================================
         // CỘT PHẢI: FORM ĐĂNG NHẬP TRẮNG HIỆN ĐẠI CANH GIỮA
