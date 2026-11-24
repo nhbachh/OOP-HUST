@@ -316,6 +316,11 @@ public class JavaFxApp extends Application {
         new Thread(() -> {
             try {
                 LoginView lv = new LoginView(primaryStage, userService, this::onLoginSuccess);
+                Platform.runLater(() -> {
+                    lv.getTxtUsername().setText("admin");
+                    lv.getTxtPassword().setText("Admin@123");
+                });
+                Thread.sleep(100);
                 captureSingleView(lv, outDir + "/javafx_login.png");
 
                 // Bật xem mật khẩu để chụp ảnh minh họa

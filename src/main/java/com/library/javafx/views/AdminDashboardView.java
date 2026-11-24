@@ -678,10 +678,15 @@ public class AdminDashboardView extends BorderPane {
     }
 
     private void updateCardValue(VBox card, String text) {
-        if (card != null) {
-            for (javafx.scene.Node node : card.getChildren()) {
-                if (node instanceof Label) {
-                    ((Label) node).setText(text);
+        if (card != null && card.getChildren().size() > 1) {
+            javafx.scene.Node node = card.getChildren().get(1);
+            if (node instanceof Label lbl) {
+                lbl.setText(text);
+                return;
+            }
+            for (javafx.scene.Node n : card.getChildren()) {
+                if (n instanceof Label lbl) {
+                    lbl.setText(text);
                     return;
                 }
             }

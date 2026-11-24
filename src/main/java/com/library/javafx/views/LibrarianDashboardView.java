@@ -846,7 +846,7 @@ public class LibrarianDashboardView extends BorderPane {
                 List<BorrowRecord> all = borrowService.getAllBorrowRecords();
                 activeBorrowList.clear();
                 for (BorrowRecord r : all) {
-                    if (r.getStatus() == BorrowStatus.BORROWED) {
+                    if (r.getStatus() == BorrowStatus.BORROWED || r.getStatus() == BorrowStatus.OVERDUE) {
                         activeBorrowList.add(r);
                     }
                 }

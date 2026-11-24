@@ -14,6 +14,7 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
 
 import java.util.function.Consumer;
+import java.util.prefs.Preferences;
 
 /**
  * Giao diện Đăng nhập JavaFX Version 2 Hiện Đại (LoginView).
@@ -44,15 +45,17 @@ public class LoginView extends HBox {
         setStyle("-fx-background-color: #FFFFFF;");
         setPadding(Insets.EMPTY);
 
-        // 1. Khởi tạo các trường nhập liệu
-        this.txtUsername = new TextField("admin");
+        // 1. Khởi tạo các trường nhập liệu (mặc định trống, sẵn sàng cho người dùng nhập)
+        Preferences prefs = Preferences.userNodeForPackage(LoginView.class);
+        String savedUsername = prefs.get("hust_lib_saved_username", "");
+
+        this.txtUsername = new TextField(savedUsername);
         this.txtUsername.setPromptText("Nhập tên đăng nhập hoặc MSSV...");
         this.txtUsername.setStyle(JavaFxTheme.CSS_INPUT);
 
         // Trường mật khẩu ẩn (dấu chấm tròn)
         String pwdStyle = JavaFxTheme.CSS_INPUT + " -fx-padding: 8 38 8 12;";
         this.txtPassword = new PasswordField();
-        this.txtPassword.setText("Admin@123");
         this.txtPassword.setPromptText("Nhập mật khẩu...");
         this.txtPassword.setStyle(pwdStyle);
 
@@ -165,7 +168,7 @@ public class LoginView extends HBox {
         sampleBox.setPadding(new Insets(12, 14, 12, 14));
         sampleBox.setStyle("-fx-background-color: rgba(0, 0, 0, 0.28); -fx-background-radius: 10; -fx-border-color: rgba(255,255,255,0.12); -fx-border-radius: 10;");
 
-        Label lblSampleTitle = new Label("TÀI KHOẢN MẪU KIỂM THỬ (CLICK ĐỂ ĐIỀN):");
+        Label lblSampleTitle = new Label("GỢI Ý ĐĂNG NHẬP NHANH (HỆ THỐNG):");
         lblSampleTitle.setFont(Font.font("System", FontWeight.BOLD, 9));
         lblSampleTitle.setStyle("-fx-text-fill: rgba(255, 255, 255, 0.7);");
 
@@ -228,6 +231,7 @@ public class LoginView extends HBox {
         lblPass.setStyle("-fx-text-fill: " + JavaFxTheme.COLOR_TEXT_PRIMARY + ";");
 
         CheckBox chkRemember = new CheckBox("Ghi nhớ tài khoản trên máy này");
+        chkRemember.setSelected(!savedUsername.isEmpty());
         chkRemember.setStyle("-fx-text-fill: " + JavaFxTheme.COLOR_TEXT_MUTED + "; -fx-font-size: 11px;");
 
         btnLogin.setMaxWidth(Double.MAX_VALUE);
@@ -249,6 +253,11 @@ public class LoginView extends HBox {
             try {
                 User authenticated = userService != null ? userService.authenticate(u, p) : null;
                 if (authenticated != null && onLoginSuccess != null) {
+                    if (chkRemember.isSelected()) {
+                        prefs.put("hust_lib_saved_username", u);
+                    } else {
+                        prefs.remove("hust_lib_saved_username");
+                    }
                     onLoginSuccess.accept(authenticated);
                 } else if (userService == null && onLoginSuccess != null) {
                     // Demo fallback
