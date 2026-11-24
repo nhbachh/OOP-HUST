@@ -336,13 +336,11 @@ Kết quả tạo ra file JAR độc lập `target/LibraryManagementSystem-1.0.0
 
 ### 5.4. Khởi chạy Ứng dụng
 
-#### Cách 1: Khởi chạy Giao diện JavaFX Version 2 Hiện đại (Mặc định)
+#### Khởi chạy Giao diện JavaFX Version 2 Hiện đại
 - **Trên macOS / Linux:**
   ```bash
-  ./run.sh                  # Mặc định khởi chạy JavaFX v2
+  ./run.sh                  # Khởi chạy ứng dụng JavaFX v2 (Main)
   ./run.sh --demo           # Chạy JavaFX với thanh điều hướng Demo đa màn hình
-  ./run.sh --swing          # Chạy Giao diện Swing cũ (Legacy v1)
-  ./run.sh --cli            # Khởi chạy Giao diện Dòng lệnh (Console CLI)
   ```
 - **Hoặc chạy trực tiếp script JavaFX:**
   ```bash
@@ -350,8 +348,7 @@ Kết quả tạo ra file JAR độc lập `target/LibraryManagementSystem-1.0.0
   ```
 - **Trên Windows:**
   ```cmd
-  run.bat                   REM Khởi chạy Giao diện Đồ họa GUI
-  run.bat --cli             REM Khởi chạy Giao diện Console CLI
+  run.bat                   REM Khởi chạy ứng dụng JavaFX v2
   ```
 
 ---

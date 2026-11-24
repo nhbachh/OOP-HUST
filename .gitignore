@@ -6,4 +6,9 @@ target/
 *.iml
 dependency-reduced-pom.xml
 .classpath.txt
+reports/
 
+# Chi cho phep README.md, bo qua tat ca file .md khac
+*.md
+**/*.md
+!README.md
