@@ -120,16 +120,29 @@ public class BorrowRecordDAOImpl implements BorrowRecordDAO {
         return Optional.empty();
     }
 
+    /**
+     * Đồng bộ trạng thái các phiếu mượn chưa trả đã quá hạn trả sang OVERDUE.
+     */
+    private void syncOverdueStatuses(Connection conn) throws SQLException {
+        String updateSql = "UPDATE borrow_records SET status = 'OVERDUE' " +
+                           "WHERE status = 'BORROWED' AND return_date IS NULL AND due_date < CURDATE()";
+        try (PreparedStatement ps = conn.prepareStatement(updateSql)) {
+            ps.executeUpdate();
+        }
+    }
+
     @Override
     public List<BorrowRecord> findAll() {
         List<BorrowRecord> list = new ArrayList<>();
         String sql = SELECT_BASE + "ORDER BY record_id ASC";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            syncOverdueStatuses(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
-                list.add(mapResultSetToBorrowRecord(rs));
+                while (rs.next()) {
+                    list.add(mapResultSetToBorrowRecord(rs));
+                }
             }
         } catch (SQLException e) {
             System.err.println("[BorrowRecordDAOImpl.findAll] Lỗi lấy toàn bộ danh sách phiếu mượn: " + e.getMessage());
@@ -141,13 +154,14 @@ public class BorrowRecordDAOImpl implements BorrowRecordDAO {
     public List<BorrowRecord> findByUserId(int userId) {
         List<BorrowRecord> list = new ArrayList<>();
         String sql = SELECT_BASE + "WHERE user_id = ? ORDER BY record_id ASC";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, userId);
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToBorrowRecord(rs));
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            syncOverdueStatuses(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapResultSetToBorrowRecord(rs));
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -160,13 +174,14 @@ public class BorrowRecordDAOImpl implements BorrowRecordDAO {
     public List<BorrowRecord> findByStatus(BorrowStatus status) {
         List<BorrowRecord> list = new ArrayList<>();
         String sql = SELECT_BASE + "WHERE status = ? ORDER BY record_id ASC";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setString(1, status.name());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    list.add(mapResultSetToBorrowRecord(rs));
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            syncOverdueStatuses(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, status.name());
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        list.add(mapResultSetToBorrowRecord(rs));
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -178,13 +193,15 @@ public class BorrowRecordDAOImpl implements BorrowRecordDAO {
     @Override
     public List<BorrowRecord> findOverdueRecords() {
         List<BorrowRecord> list = new ArrayList<>();
-        String sql = SELECT_BASE + "WHERE status = 'OVERDUE' ORDER BY due_date ASC";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        String sql = SELECT_BASE + "WHERE (status = 'OVERDUE' OR (status = 'BORROWED' AND due_date < CURDATE())) AND return_date IS NULL ORDER BY due_date ASC";
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            syncOverdueStatuses(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
 
-            while (rs.next()) {
-                list.add(mapResultSetToBorrowRecord(rs));
+                while (rs.next()) {
+                    list.add(mapResultSetToBorrowRecord(rs));
+                }
             }
         } catch (SQLException e) {
             System.err.println("[BorrowRecordDAOImpl.findOverdueRecords] Lỗi lấy danh sách phiếu quá hạn: " + e.getMessage());

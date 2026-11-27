@@ -194,6 +194,8 @@ public class BorrowServiceImpl implements BorrowService {
 
         String updateRecordSql = "UPDATE borrow_records SET return_date = ?, status = 'RETURNED' WHERE record_id = ?";
         String updateBookSql = "UPDATE books SET available_copies = available_copies + 1 WHERE book_id = ?";
+        String findFineSql = "SELECT fine_id, status FROM fines WHERE record_id = ? LIMIT 1";
+        String updateFineSql = "UPDATE fines SET overdue_days = ?, fine_amount = ?, reason = ? WHERE fine_id = ?";
         String insertFineSql = "INSERT INTO fines (record_id, user_id, overdue_days, fine_amount, reason, status, created_at) " +
                                "VALUES (?, ?, ?, ?, ?, 'UNPAID', NOW())";
 
@@ -220,18 +222,40 @@ public class BorrowServiceImpl implements BorrowService {
                     }
                 }
 
-                // Thao tác 3: Tự động tạo vé phạt nếu quá hạn
+                // Thao tác 3: Tự động tạo hoặc cập nhật vé phạt nếu quá hạn (tránh tạo trùng)
                 if (isOverdue && fineAmount.compareTo(BigDecimal.ZERO) > 0) {
                     String reason = String.format("Quá hạn trả sách %d ngày (Mức phạt: %s VNĐ/ngày)",
                             overdueDays, FineService.DAILY_FINE_RATE);
 
-                    try (PreparedStatement psFine = conn.prepareStatement(insertFineSql)) {
-                        psFine.setInt(1, recordId);
-                        psFine.setInt(2, record.getUserId());
-                        psFine.setInt(3, (int) overdueDays);
-                        psFine.setBigDecimal(4, fineAmount);
-                        psFine.setString(5, reason);
-                        psFine.executeUpdate();
+                    Integer existingFineId = null;
+                    String existingStatus = null;
+                    try (PreparedStatement psFind = conn.prepareStatement(findFineSql)) {
+                        psFind.setInt(1, recordId);
+                        try (ResultSet rs = psFind.executeQuery()) {
+                            if (rs.next()) {
+                                existingFineId = rs.getInt("fine_id");
+                                existingStatus = rs.getString("status");
+                            }
+                        }
+                    }
+
+                    if (existingFineId == null) {
+                        try (PreparedStatement psFine = conn.prepareStatement(insertFineSql)) {
+                            psFine.setInt(1, recordId);
+                            psFine.setInt(2, record.getUserId());
+                            psFine.setInt(3, (int) overdueDays);
+                            psFine.setBigDecimal(4, fineAmount);
+                            psFine.setString(5, reason);
+                            psFine.executeUpdate();
+                        }
+                    } else if ("UNPAID".equalsIgnoreCase(existingStatus)) {
+                        try (PreparedStatement psUpdateFine = conn.prepareStatement(updateFineSql)) {
+                            psUpdateFine.setInt(1, (int) overdueDays);
+                            psUpdateFine.setBigDecimal(2, fineAmount);
+                            psUpdateFine.setString(3, reason);
+                            psUpdateFine.setInt(4, existingFineId);
+                            psUpdateFine.executeUpdate();
+                        }
                     }
                 }
 

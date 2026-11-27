@@ -116,6 +116,17 @@ public class LibrarianDashboardView extends BorderPane {
         tabPane.getTabs().add(createBorrowReturnTab());
         tabPane.getTabs().add(createFinesTab());
 
+        // Tự động làm mới dữ liệu khi chuyển tab (bao gồm đồng bộ phiếu phạt quá hạn)
+        tabPane.getSelectionModel().selectedIndexProperty().addListener((obs, oldIdx, newIdx) -> {
+            if (newIdx.intValue() == 0) {
+                refreshBooks();
+            } else if (newIdx.intValue() == 1) {
+                refreshActiveBorrows();
+            } else if (newIdx.intValue() == 2) {
+                refreshFines();
+            }
+        });
+
         setCenter(tabPane);
 
         // Nạp dữ liệu ban đầu
